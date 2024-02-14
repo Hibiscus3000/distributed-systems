@@ -1,0 +1,17 @@
+externalApiPrefix:
+  /api/hash
+internalApiPrefix:
+  /internal/api/manager/hash
+springdoc:
+  swagger-ui:
+    path:
+      /
+workers:
+  urls:
+    http://localhost:8081,
+  apiPrefix:
+    /internal/api/worker/hash
+server:
+  error:
+    include-message:
+      always
