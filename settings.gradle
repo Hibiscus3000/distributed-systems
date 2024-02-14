@@ -11,5 +11,7 @@ plugins {
 }
 
 rootProject.name = 'distributed-systems'
-include('manager')
-include('worker')
+include 'manager'
+include 'worker'
+include 'lib'
+

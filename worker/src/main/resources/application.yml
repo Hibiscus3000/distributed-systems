@@ -1,3 +1,5 @@
+internalApiPrefix:
+  /internal/api/worker/hash
 server:
   port:
     8081

@@ -9,10 +9,10 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
+import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTaskBuilder;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrack;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
-import ru.nsu.fit.g20203.sinyukov.manager.worker.HashCrackTask;
-import ru.nsu.fit.g20203.sinyukov.manager.worker.HashCrackTaskBuilder;
 
 import java.util.HashMap;
 import java.util.List;

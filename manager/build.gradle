@@ -20,7 +20,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web:3.2.2'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
     implementation 'com.google.guava:guava:33.0.0-jre'
-
+    implementation project(':lib')
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
