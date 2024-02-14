@@ -1,0 +1,45 @@
+package ru.nsu.fit.g20203.sinyukov.manager.worker;
+
+import java.util.UUID;
+
+public class HashCrackTaskBuilder {
+
+    private UUID id;
+    private String hash;
+    private int maxLength;
+    private int partNumber;
+    private int partCount;
+
+    public static HashCrackTaskBuilder create() {
+        return new HashCrackTaskBuilder();
+    }
+
+    public HashCrackTaskBuilder id(UUID id) {
+        this.id = id;
+        return this;
+    }
+
+    public HashCrackTaskBuilder hash(String hash) {
+        this.hash = hash;
+        return this;
+    }
+
+    public HashCrackTaskBuilder maxLength(int maxLength) {
+        this.maxLength = maxLength;
+        return this;
+    }
+
+    public HashCrackTaskBuilder partNumber(int partNumber) {
+        this.partNumber = partNumber;
+        return this;
+    }
+
+    public HashCrackTaskBuilder partCount(int partCount) {
+        this.partCount = partCount;
+        return this;
+    }
+
+    public HashCrackTask build() {
+        return new HashCrackTask(id, hash, maxLength, partNumber, partCount);
+    }
+}
