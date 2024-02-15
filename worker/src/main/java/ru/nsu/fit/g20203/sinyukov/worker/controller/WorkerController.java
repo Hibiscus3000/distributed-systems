@@ -5,6 +5,7 @@ import org.paukov.combinatorics3.Generator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,9 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
+import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
+import ru.nsu.fit.g20203.sinyukov.worker.ManagerUnavailableException;
 import ru.nsu.fit.g20203.sinyukov.worker.WorkerTask;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -30,22 +35,25 @@ public class WorkerController {
 
     // number of attempts to patch manager hash crack
     private static final int ATTEMPTS = 3;
+    private static final int INITIAL_DELAY_BETWEEN_ATTEMPTS = 2;
+    private static final double JITTER = 0.5;
 
     private final WebClient webClient;
     private final String patchHashCrackUrl;
 
     public WorkerController(@Value("${manager.baseUrl}") String managerBaseUrl,
-                            @Value("${manager.patchHashCrack.url}") String patchHashCrackUrl) {
+                            @Value("${manager.patchHashCrack.path}") String patchHashCrackUrl) {
         this.webClient = WebClient.create(managerBaseUrl);
         this.patchHashCrackUrl = patchHashCrackUrl;
     }
 
     @PostMapping("/crack/task")
-    public void postHashCrackTask(@RequestBody HashCrackTask task) {
+    public void postHashCrackTask(@RequestBody HashCrackTask task) throws InterruptedException {
         executorService.submit(() -> {
             final WorkerTask workerTask = createWorkerTask(task);
             final List<String> results = findResults(workerTask);
-            sendResultsToManager(results, ATTEMPTS);
+            final HashCrackPatch hashCrackPatch = new HashCrackPatch(task.id(), results);
+            sendHashCrackPatchToManager(hashCrackPatch);
         });
     }
 
@@ -105,24 +113,21 @@ public class WorkerController {
         return results;
     }
 
-
-    private void sendResultsToManager(List<String> results, int attempts) {
-        if (0 >= attempts) {
-            return;
-        }
-        sendResultsToManager(results).subscribe(success -> {
-            if (!success) {
-                sendResultsToManager(results, attempts - 1);
-            }
-        });
-    }
-
-    private Mono<Boolean> sendResultsToManager(List<String> results) {
-        return webClient
-                .patch()
+    private void sendHashCrackPatchToManager(HashCrackPatch hashCrackPatch) {
+        webClient.patch()
                 .uri(patchHashCrackUrl)
-                .bodyValue(results)
+                .bodyValue(hashCrackPatch)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .exchangeToMono(response -> Mono.just(response.statusCode().equals(HttpStatus.OK)));
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        response -> Mono.error(new ManagerUnavailableException(response.statusCode())))
+                .bodyToMono(Void.class)
+                .retryWhen(Retry.backoff(ATTEMPTS, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
+                        .jitter(JITTER)
+                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
+                                new ManagerUnavailableException("Unable to reach worker after " + ATTEMPTS + " attempts",
+                                        HttpStatus.SERVICE_UNAVAILABLE)))
+                .onErrorComplete()
+                .subscribe();
     }
 }

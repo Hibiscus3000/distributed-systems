@@ -19,7 +19,7 @@ public class HashCrack {
     }
 
     public synchronized void addResults(List<String> results) {
-        results.addAll(results);
+        this.results.addAll(results);
         if (HashCrackStatus.IN_PROGRESS == status) {
             status = HashCrackStatus.READY;
         }

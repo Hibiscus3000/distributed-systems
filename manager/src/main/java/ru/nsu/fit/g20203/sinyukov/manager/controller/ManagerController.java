@@ -3,18 +3,27 @@ package ru.nsu.fit.g20203.sinyukov.manager.controller;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang3.NotImplementedException;
+import com.google.common.net.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import reactor.util.retry.Retry;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTaskBuilder;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrack;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.WorkerUnavailableException;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +38,16 @@ public class ManagerController {
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(NUMBER_OF_THREADS);
     private static final long TIMEOUT_MINUTES = 20;
 
+    // number of attempts to post worker hash crack task
+    private static final int ATTEMPTS = 3;
+    private static final int INITIAL_DELAY_BETWEEN_ATTEMPTS = 2;
+    private static final double JITTER = 0.5;
+
+    private final WebClient webClient = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofSeconds(1)))).build();
     private final int numberOfWorkers;
     private final String[] workerUrls;
+    private final String postHashCrackTaskPath;
 
     private final String[] alphabet;
 
@@ -42,9 +59,12 @@ public class ManagerController {
     // timeout map
     private final ConcurrentMap<UUID, ScheduledFuture<?>> timeoutFutures = new ConcurrentHashMap<>();
 
-    public ManagerController(@Value("${workers.urls}") String[] workerUrls, @Value("${alphabet}") String[] alphabet) {
+    public ManagerController(@Value("${workers.urls}") String[] workerUrls,
+                             @Value("${workers.postHashCrackTask.path}") String postHashCrackTaskPath,
+                             @Value("${alphabet}") String[] alphabet) {
         this.workerUrls = workerUrls;
         numberOfWorkers = workerUrls.length;
+        this.postHashCrackTaskPath = postHashCrackTaskPath;
 
         this.alphabet = alphabet;
     }
@@ -63,12 +83,15 @@ public class ManagerController {
         idHashCrackRequestBiMap.put(id, request);
         final HashCrack hashCrack = new HashCrack();
         hashCracks.put(id, hashCrack);
-        
+
         final Map<String, HashCrackTask> tasksMap = createWorkerTask(id, request);
         sendTasksToWorkers(tasksMap);
 
         // timeout
-        ScheduledFuture<?> timeoutFuture = executorService.schedule(hashCrack::timeout, TIMEOUT_MINUTES, TimeUnit.MINUTES);
+        ScheduledFuture<?> timeoutFuture = executorService.schedule(() -> {
+            hashCrack.timeout();
+            timeoutFutures.remove(id);
+        }, TIMEOUT_MINUTES, TimeUnit.MINUTES);
         timeoutFutures.put(id, timeoutFuture);
         return id;
     }
@@ -128,11 +151,27 @@ public class ManagerController {
     }
 
     private void sendTasksToWorkers(Map<String, HashCrackTask> tasksMap) {
-        throw new NotImplementedException(); //TODO
+        for (var task : tasksMap.entrySet()) {
+            webClient.post()
+                    .uri(task.getKey() + postHashCrackTaskPath)
+                    .bodyValue(task.getValue())
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is5xxServerError,
+                            response -> Mono.error(new WorkerUnavailableException(response.statusCode())))
+                    .bodyToMono(Void.class)
+                    .retryWhen(Retry.backoff(ATTEMPTS, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
+                            .jitter(JITTER)
+                            .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
+                                    new WorkerUnavailableException("Unable to reach worker after " + ATTEMPTS + " attempts",
+                                            HttpStatus.SERVICE_UNAVAILABLE)))
+                    .onErrorComplete()
+                    .subscribe();
+        }
     }
 
     private void checkMaxLength(int maxLength) {
-        if (MAX_LENGTH <= maxLength || maxLength <= MIN_LENGTH) {
+        if (MAX_LENGTH < maxLength || maxLength < MIN_LENGTH) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     String.format("maxLength should be in [%d, %d]", MIN_LENGTH, MAX_LENGTH));
         }
