@@ -12,10 +12,11 @@ public class HashCrack {
     private HashCrackStatus status = HashCrackStatus.IN_PROGRESS;
     private final List<String> results = new ArrayList<>();
 
-    public synchronized void timeout() {
+    public synchronized boolean timeout() {
         if (HashCrackStatus.IN_PROGRESS == status) {
             status = HashCrackStatus.ERROR;
         }
+        return HashCrackStatus.ERROR == status;
     }
 
     public synchronized void addResults(List<String> results) {
@@ -31,5 +32,10 @@ public class HashCrack {
 
     public synchronized List<String> getResults() {
         return results;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[%s, [%s]]", HashCrack.class.getName(), status, results);
     }
 }

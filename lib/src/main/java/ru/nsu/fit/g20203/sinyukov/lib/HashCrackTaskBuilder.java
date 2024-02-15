@@ -1,5 +1,6 @@
 package ru.nsu.fit.g20203.sinyukov.lib;
 
+import java.util.List;
 import java.util.UUID;
 
 public class HashCrackTaskBuilder {
@@ -9,7 +10,7 @@ public class HashCrackTaskBuilder {
     private int maxLength;
     private int partNumber;
     private int partCount;
-    private String[] alphabet;
+    private List<String> alphabet;
 
     public static HashCrackTaskBuilder create() {
         return new HashCrackTaskBuilder();
@@ -40,7 +41,7 @@ public class HashCrackTaskBuilder {
         return this;
     }
 
-    public HashCrackTaskBuilder alphabet(String[] alphabet) {
+    public HashCrackTaskBuilder alphabet(List<String> alphabet) {
         this.alphabet = alphabet;
         return this;
     }

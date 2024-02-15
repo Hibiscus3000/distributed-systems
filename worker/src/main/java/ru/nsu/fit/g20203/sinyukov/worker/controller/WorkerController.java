@@ -2,6 +2,8 @@ package ru.nsu.fit.g20203.sinyukov.worker.controller;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.paukov.combinatorics3.Generator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -31,6 +34,8 @@ import java.util.stream.Stream;
 @RequestMapping("${internalApiPrefix}")
 public class WorkerController {
 
+    private final Logger logger = LoggerFactory.getLogger(WorkerController.class);
+    
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     // number of attempts to patch manager hash crack
@@ -50,21 +55,29 @@ public class WorkerController {
     @PostMapping("/crack/task")
     public void postHashCrackTask(@RequestBody HashCrackTask task) throws InterruptedException {
         executorService.submit(() -> {
+            final UUID id = task.id();
+            logger.info(id + ": Task received: " + task);
             final WorkerTask workerTask = createWorkerTask(task);
+            logger.debug(id + ": Worker task created: " + workerTask);
             final List<String> results = findResults(workerTask);
-            final HashCrackPatch hashCrackPatch = new HashCrackPatch(task.id(), results);
+            if (results.isEmpty()) {
+                logger.info(id + ": Worker found no results");
+            } else {
+                logger.info(id + ": Worker found results: " + results);
+            }
+            final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, results);
             sendHashCrackPatchToManager(hashCrackPatch);
         });
     }
 
     private WorkerTask createWorkerTask(HashCrackTask task) {
         final int maxLength = task.maxLength();
-        final String[] alphabet = task.alphabet();
+        final List<String> alphabet = task.alphabet();
 
         // total number of words to check for all workers
         long total = 0;
         for (int i = 1; i <= maxLength; ++i) {
-            total += (long) Math.pow(alphabet.length, i);
+            total += (long) Math.pow(alphabet.size(), i);
         }
         // number of words to check for every worker
         final long toCheck = total / task.partCount();
@@ -76,7 +89,7 @@ public class WorkerController {
         int l;
         for (l = 1; l <= maxLength; ++l) {
             // number of words of length l
-            final long givenLengthCount = (long) Math.pow(alphabet.length, l);
+            final long givenLengthCount = (long) Math.pow(alphabet.size(), l);
             if (skipped + givenLengthCount > toSkip) {
                 break;
             }
@@ -87,16 +100,21 @@ public class WorkerController {
     }
 
     private List<String> findResults(WorkerTask task) {
+        logger.debug("Worker starts searching");
         final List<String> results = new ArrayList<>();
         long wordsChecked = 0;
         for (int l = task.startLength(); l <= task.maxLength(); ++l) {
+            logger.trace("Worker started checking words of length " + l);
             Stream<String> wordsStream = Generator.permutation(task.alphabet())
                     .withRepetitions(l)
                     .stream()
                     .map(list -> String.join("", list));
             if (task.startLength() == l) {
-                wordsStream = wordsStream.skip(task.toSkip());
+                final long skip = task.toSkip();
+                wordsStream = wordsStream.skip(skip);
+                logger.trace("Worker skipped " + task.toSkip() + " first elements");
             }
+
             final Iterator<String> wordsIterator = wordsStream.iterator();
             while (wordsIterator.hasNext()) {
                 final String word = wordsIterator.next();
@@ -105,6 +123,7 @@ public class WorkerController {
                 }
                 final String wordHash = DigestUtils.md5Hex(word);
                 if (wordHash.equals(task.hash())) {
+                    logger.debug("Worker found result: " + word);
                     results.add(word);
                 }
                 ++wordsChecked;
@@ -114,6 +133,8 @@ public class WorkerController {
     }
 
     private void sendHashCrackPatchToManager(HashCrackPatch hashCrackPatch) {
+        final UUID id = hashCrackPatch.id();
+        logger.debug(id + ": Sending patch to manager: " + hashCrackPatch);
         webClient.patch()
                 .uri(patchHashCrackUrl)
                 .bodyValue(hashCrackPatch)
@@ -124,10 +145,15 @@ public class WorkerController {
                 .bodyToMono(Void.class)
                 .retryWhen(Retry.backoff(ATTEMPTS, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
                         .jitter(JITTER)
-                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
-                                new ManagerUnavailableException("Unable to reach worker after " + ATTEMPTS + " attempts",
-                                        HttpStatus.SERVICE_UNAVAILABLE)))
-                .onErrorComplete()
+                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
+                            final var ex = new ManagerUnavailableException(
+                                    String.format("Unable to reach manager after %d attempts", ATTEMPTS),
+                                    HttpStatus.SERVICE_UNAVAILABLE);
+                            logger.debug(id + ": Worker unavailable", ex);
+                            return ex;
+                        }))
+                .doOnError(throwable ->
+                        logger.warn("Error occurred while sending task to worker", throwable))
                 .subscribe();
     }
 }
