@@ -32,17 +32,21 @@ public class ManagerController {
     private final int numberOfWorkers;
     private final String[] workerUrls;
 
+    private final String[] alphabet;
+
+    private static final int MAX_LENGTH = 10;
+    private static final int MIN_LENGTH = 1;
+
     private final ConcurrentMap<UUID, HashCrack> hashCracks = new ConcurrentHashMap<>();
     private final BiMap<UUID, HashCrackRequest> idHashCrackRequestBiMap = Maps.synchronizedBiMap(HashBiMap.create());
     // timeout map
     private final ConcurrentMap<UUID, ScheduledFuture<?>> timeoutFutures = new ConcurrentHashMap<>();
 
-    private static final int MAX_LENGTH = 10;
-    private static final int MIN_LENGTH = 1;
-
-    public ManagerController(@Value("${workers.urls}") String[] workerUrls) {
+    public ManagerController(@Value("${workers.urls}") String[] workerUrls, @Value("${alphabet}") String[] alphabet) {
         this.workerUrls = workerUrls;
         numberOfWorkers = workerUrls.length;
+
+        this.alphabet = alphabet;
     }
 
     @PostMapping("${externalApiPrefix}/crack")
@@ -114,6 +118,7 @@ public class ManagerController {
                     .maxLength(maxLength)
                     .partCount(partCount)
                     .partNumber(partNumber)
+                    .alphabet(alphabet)
                     .build();
             ++partNumber;
             tasksMap.put(workerUrl, task);

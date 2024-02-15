@@ -9,6 +9,7 @@ public class HashCrackTaskBuilder {
     private int maxLength;
     private int partNumber;
     private int partCount;
+    private String[] alphabet;
 
     public static HashCrackTaskBuilder create() {
         return new HashCrackTaskBuilder();
@@ -39,7 +40,12 @@ public class HashCrackTaskBuilder {
         return this;
     }
 
+    public HashCrackTaskBuilder alphabet(String[] alphabet) {
+        this.alphabet = alphabet;
+        return this;
+    }
+
     public HashCrackTask build() {
-        return new HashCrackTask(id, hash, maxLength, partNumber, partCount);
+        return new HashCrackTask(id, hash, alphabet, maxLength, partNumber, partCount);
     }
 }

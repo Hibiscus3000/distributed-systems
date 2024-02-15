@@ -1,6 +1,7 @@
 package ru.nsu.fit.g20203.sinyukov.lib;
 
-import org.jetbrains.annotations.NotNull;
+
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 import java.util.UUID;

@@ -1,5 +1,18 @@
 internalApiPrefix:
   /internal/api/worker/hash
+springdoc:
+  swagger-ui:
+    path:
+      /
+manager:
+  patchHashCrack:
+    url:
+      /crack/request
+  baseUrl:
+    localhost:8080/internal/api/manager/hash
 server:
   port:
     8081
+  error:
+    include-message:
+      always

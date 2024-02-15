@@ -3,12 +3,14 @@
  */
 package ru.nsu.fit.g20203.sinyukov.worker;
 
-public class WorkerApplication {
-    public String getGreeting() {
-        return "Hello World!";
-    }
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@SpringBootApplication
+@OpenAPIDefinition
+public class WorkerApplication {
     public static void main(String[] args) {
-        System.out.println(new WorkerApplication().getGreeting());
+        SpringApplication.run(WorkerApplication.class, args);
     }
 }
