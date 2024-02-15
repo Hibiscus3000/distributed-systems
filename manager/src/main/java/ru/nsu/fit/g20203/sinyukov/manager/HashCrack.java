@@ -13,11 +13,16 @@ public class HashCrack {
     private final List<String> results = new ArrayList<>();
 
     public synchronized void timeout() {
-        status = HashCrackStatus.ERROR;
+        if (HashCrackStatus.IN_PROGRESS == status) {
+            status = HashCrackStatus.ERROR;
+        }
     }
 
-    public synchronized void addResult(String result) {
-        results.add(result);
+    public synchronized void addResults(List<String> results) {
+        results.addAll(results);
+        if (HashCrackStatus.IN_PROGRESS == status) {
+            status = HashCrackStatus.READY;
+        }
     }
 
     public synchronized HashCrackStatus getStatus() {

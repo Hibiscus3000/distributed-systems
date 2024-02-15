@@ -1,5 +1,8 @@
 package ru.nsu.fit.g20203.sinyukov.manager;
 
-public record HashCrackRequest(String hash, int maxLength) {
+import jakarta.validation.constraints.NotNull;
+
+public record HashCrackRequest(@NotNull String hash, int maxLength) {
+    
 
 }
