@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="manager" type="Application" factoryName="Application">
+        <option name="MAIN_CLASS_NAME" value="ru.nsu.fit.g20203.sinyukov.manager.ManagerApplication"/>
+        <module name="distributed-systems.manager.main"/>
+        <option name="VM_PARAMETERS" value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.manager=TRACE"/>
+        <method v="2">
+            <option name="Make" enabled="true"/>
+        </method>
+    </configuration>
+</component>

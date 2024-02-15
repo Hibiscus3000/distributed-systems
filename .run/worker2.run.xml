@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="worker2" type="Application" factoryName="Application">
+        <option name="MAIN_CLASS_NAME" value="ru.nsu.fit.g20203.sinyukov.worker.WorkerApplication"/>
+        <module name="distributed-systems.worker.main"/>
+        <option name="PROGRAM_PARAMETERS" value="--server.port=8082"/>
+        <option name="VM_PARAMETERS" value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.worker=TRACE"/>
+        <method v="2">
+            <option name="Make" enabled="true"/>
+        </method>
+    </configuration>
+</component>

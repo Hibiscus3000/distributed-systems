@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="2 workers" type="CompoundRunConfigurationType">
+        <toRun name="manager42workers" type="Application"/>
+        <toRun name="worker" type="Application"/>
+        <toRun name="worker2" type="Application"/>
+        <method v="2"/>
+    </configuration>
+</component>
