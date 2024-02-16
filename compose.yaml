@@ -1,0 +1,21 @@
+services:
+  manager:
+    image: manager
+    build:
+      dockerfile: Dockerfile
+      args:
+        COMPONENT: manager
+    environment:
+      - workers.urls=http://worker:8081
+      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov.manager=TRACE
+    ports:
+      - 8080:8080
+  worker:
+    image: worker
+    build:
+      dockerfile: Dockerfile
+      args:
+        COMPONENT: worker
+    environment:
+      - manager.baseUrl=http://manager:8080
+      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov.worker=TRACE

@@ -43,12 +43,15 @@ public class WorkerController {
     private static final int INITIAL_DELAY_BETWEEN_ATTEMPTS = 2;
     private static final double JITTER = 0.5;
 
+    private final String webClientBaseUrl;
     private final WebClient webClient;
     private final String patchHashCrackUrl;
 
     public WorkerController(@Value("${manager.baseUrl}") String managerBaseUrl,
+                            @Value("${manager.apiPrefix}") String managerApiPrefix,
                             @Value("${manager.patchHashCrack.path}") String patchHashCrackUrl) {
-        this.webClient = WebClient.create(managerBaseUrl);
+        webClientBaseUrl = managerBaseUrl + managerApiPrefix;
+        this.webClient = WebClient.create(webClientBaseUrl);
         this.patchHashCrackUrl = patchHashCrackUrl;
     }
 
@@ -134,7 +137,8 @@ public class WorkerController {
 
     private void sendHashCrackPatchToManager(HashCrackPatch hashCrackPatch) {
         final UUID id = hashCrackPatch.id();
-        logger.debug(id + ": Sending patch to manager: " + hashCrackPatch);
+        logger.debug(String.format("%s : Sending patch to manager (%s): %s", id, webClientBaseUrl + patchHashCrackUrl,
+                hashCrackPatch));
         webClient.patch()
                 .uri(patchHashCrackUrl)
                 .bodyValue(hashCrackPatch)
@@ -153,7 +157,7 @@ public class WorkerController {
                             return ex;
                         }))
                 .doOnError(throwable ->
-                        logger.warn("Error occurred while sending task to worker", throwable))
+                        logger.warn("Error occurred while sending patch to manager", throwable))
                 .subscribe();
     }
 }

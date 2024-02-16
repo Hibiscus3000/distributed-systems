@@ -5,11 +5,13 @@ springdoc:
     path:
       /
 manager:
+  baseUrl:
+    http://localhost:8080
+  apiPrefix:
+    /internal/api/manager/hash
   patchHashCrack:
     path:
       /crack/request
-  baseUrl:
-    http://localhost:8080/internal/api/manager/hash
 server:
   port:
     8081
