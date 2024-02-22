@@ -55,8 +55,8 @@ public class ManagerController {
 
     private final List<String> alphabet;
 
-    private static final int MAX_LENGTH = 10;
     private static final int MIN_LENGTH = 1;
+    private static final int MAX_LENGTH = 10;
 
     private final ConcurrentMap<UUID, HashCrack> hashCracks = new ConcurrentHashMap<>();
     private final BiMap<UUID, HashCrackRequest> idHashCrackRequestBiMap = Maps.synchronizedBiMap(HashBiMap.create());
@@ -138,6 +138,7 @@ public class ManagerController {
             final var ex = new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "No hash crack for given UUID");
             logger.warn("No crack hash for given UUID", ex);
+            throw ex;
         }
     }
 
