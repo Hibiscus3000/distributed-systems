@@ -1,9 +1,9 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:21-jdk-alpine as build
 # COMPONENT = manager or worker
-ARG COMPONENT 
-WORKDIR /workspace
+ARG COMPONENT
 
-COPY gradlew .
+WORKDIR /workspace
+COPY gradlew gradlew
 COPY gradle gradle
 COPY settings.gradle settings.gradle 
 
@@ -15,7 +15,18 @@ WORKDIR /workspace/${COMPONENT}
 COPY ${COMPONENT}/build.gradle .
 COPY ${COMPONENT}/src src
 
+RUN ["/workspace/gradlew", "build"]
+
+FROM eclipse-temurin:21-jdk-alpine as extract
 WORKDIR /workspace
-COPY run.sh .
-RUN chmod 777 run.sh
-ENTRYPOINT ["./run.sh"]
+ARG COMPONENT
+COPY --from=build workspace/${COMPONENT}/build/libs/${COMPONENT}-0.0.1-SNAPSHOT.jar app.jar 
+RUN java -Djarmode=layertools -jar app.jar extract
+
+FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /workspace
+COPY --from=extract /workspace/dependencies ./
+COPY --from=extract /workspace/spring-boot-loader ./
+COPY --from=extract /workspace/snapshot-dependencies ./
+COPY --from=extract /workspace/application ./
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
