@@ -3,7 +3,7 @@ package ru.nsu.fit.g20203.sinyukov.manager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HashCrack {
+public class HashCrackState {
 
     public enum HashCrackStatus {
         IN_PROGRESS, READY, ERROR
@@ -12,16 +12,20 @@ public class HashCrack {
     private HashCrackStatus status = HashCrackStatus.IN_PROGRESS;
     private final List<String> results = new ArrayList<>();
 
-    public synchronized boolean timeout() {
+    public synchronized boolean error() {
         if (HashCrackStatus.IN_PROGRESS == status) {
             status = HashCrackStatus.ERROR;
+            return true;
         }
-        return HashCrackStatus.ERROR == status;
+        return false;
     }
 
     public synchronized void addResults(List<String> results) {
+        if (HashCrackStatus.ERROR == status) {
+            return;
+        }
         this.results.addAll(results);
-        if (HashCrackStatus.IN_PROGRESS == status) {
+        if (!results.isEmpty() && HashCrackStatus.IN_PROGRESS == status) {
             status = HashCrackStatus.READY;
         }
     }
@@ -36,6 +40,6 @@ public class HashCrack {
 
     @Override
     public String toString() {
-        return String.format("%s[%s, [%s]]", HashCrack.class.getName(), status, results);
+        return String.format("%s[%s, %s]", HashCrackState.class.getSimpleName(), status, results);
     }
 }

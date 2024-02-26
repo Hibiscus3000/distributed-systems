@@ -3,34 +3,23 @@ package ru.nsu.fit.g20203.sinyukov.manager.controller;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
-import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
-import reactor.util.retry.Retry;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTaskBuilder;
-import ru.nsu.fit.g20203.sinyukov.manager.HashCrack;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
-import ru.nsu.fit.g20203.sinyukov.manager.WorkerUnavailableException;
+import ru.nsu.fit.g20203.sinyukov.manager.HashCrackState;
+import ru.nsu.fit.g20203.sinyukov.manager.HashCrackTimer;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.workerservice.WorkerService;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.*;
 
 @RestController
 @PropertySource("classpath:application.yml")
@@ -38,103 +27,113 @@ public class ManagerController {
 
     private final Logger logger = LoggerFactory.getLogger(ManagerController.class);
 
-    private static final int NUMBER_OF_THREADS = 4;
-    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(NUMBER_OF_THREADS);
-    private static final long TIMEOUT_MINUTES = 20;
-
-    // number of attempts to post worker hash crack task
-    private static final int ATTEMPTS = 3;
-    private static final int INITIAL_DELAY_BETWEEN_ATTEMPTS = 2;
-    private static final double JITTER = 0.5;
-
-    private final WebClient webClient = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(HttpClient.create().responseTimeout(Duration.ofSeconds(1)))).build();
-    private final int numberOfWorkers;
-    private final String[] workerUrls;
-    private final String postHashCrackTaskPath;
-
+    private final int workersCount;
     private final List<String> alphabet;
 
-    private static final int MIN_LENGTH = 1;
-    private static final int MAX_LENGTH = 10;
+    private final WorkerService workerService;
+    private final HashCrackStateRepository hashCrackStateRepository;
+    private final HashCrackTimer hashCrackTimer;
 
-    private final ConcurrentMap<UUID, HashCrack> hashCracks = new ConcurrentHashMap<>();
-    private final BiMap<UUID, HashCrackRequest> idHashCrackRequestBiMap = Maps.synchronizedBiMap(HashBiMap.create());
-    // timeout map
-    private final ConcurrentMap<UUID, ScheduledFuture<?>> timeoutFutures = new ConcurrentHashMap<>();
+    private final BiMap<UUID, HashCrackRequest> hashCrackRequests = Maps.synchronizedBiMap(HashBiMap.create());
+    private final Map<UUID, Integer> hashCrackUpdateCount = new HashMap<>();
 
-    public ManagerController(@Value("${workers.urls}") String[] workerUrls,
-                             @Value("${workers.postHashCrackTask.path}") String postHashCrackTaskPath,
-                             @Value("${alphabet}") List<String> alphabet) {
-        this.workerUrls = workerUrls;
-        numberOfWorkers = workerUrls.length;
-        this.postHashCrackTaskPath = postHashCrackTaskPath;
-
+    public ManagerController(@Value("${workers.count}") int workersCount,
+                             @Value("${alphabet}") List<String> alphabet,
+                             HashCrackStateRepository hashCrackStateRepository,
+                             WorkerService workerService,
+                             HashCrackTimer hashCrackTimer) {
+        this.workersCount = workersCount;
         this.alphabet = alphabet;
+        this.workerService = workerService;
+        this.hashCrackStateRepository = hashCrackStateRepository;
+        this.hashCrackTimer = hashCrackTimer;
     }
 
     @PostMapping("${externalApiPrefix}/crack")
     public UUID postHashCrackRequest(@RequestBody HashCrackRequest request) {
-        checkMaxLength(request.maxLength());
-
-        // request with given hash has already been received
-        if (idHashCrackRequestBiMap.containsValue(request)) {
-            final UUID id = idHashCrackRequestBiMap.inverse().get(request);
-            logger.info(id + ": Received repeated request: " + request);
-            return id;
+        if (!hashCrackRequests.containsValue(request)) {
+            createAndSendNewTask(request);
+        } else {
+            receivedRepeatedRequest(request);
         }
+        return getIdForRequest(request);
+    }
 
-        // request with new hash
+
+    private void receivedRepeatedRequest(HashCrackRequest request) {
+        final UUID id = getIdForRequest(request);
+        logger.info(id + ": Received repeated request: " + request);
+    }
+
+    private void createAndSendNewTask(HashCrackRequest request) {
         final UUID id = UUID.randomUUID();
         logger.info(id + ": Received new request: " + request);
-        idHashCrackRequestBiMap.put(id, request);
-        final HashCrack hashCrack = new HashCrack();
-        hashCracks.put(id, hashCrack);
 
-        final Map<String, HashCrackTask> tasksMap = createWorkerTask(id, request);
-        sendTasksToWorkers(tasksMap);
+        // store request
+        hashCrackRequests.put(id, request);
 
-        // timeout
-        ScheduledFuture<?> timeoutFuture = executorService.schedule(() -> {
-            if (hashCrack.timeout()) {
-                logger.info(id + ": timeout");
-            }
-            timeoutFutures.remove(id);
-        }, TIMEOUT_MINUTES, TimeUnit.MINUTES);
-        timeoutFutures.put(id, timeoutFuture);
-        return id;
+        createNewHashCrack(id);
+
+        // create and dispatch worker tasks
+        final List<HashCrackTask> tasks = createWorkerTask(id, request);
+        workerService.dispatchTasksToWorkers(tasks);
+
+        hashCrackTimer.setTimeout(hashCrackStateRepository.getHashCrack(id), id);
+    }
+
+    private UUID getIdForRequest(HashCrackRequest request) {
+        return hashCrackRequests.inverse().get(request);
+    }
+
+    private void createNewHashCrack(UUID id) {
+        hashCrackStateRepository.createNewHashCrack(id);
+        hashCrackUpdateCount.put(id, 0);
     }
 
     @GetMapping("${externalApiPrefix}/status")
-    public HashCrack getHashCrack(@RequestParam UUID id) {
-        checkId(id);
-        final HashCrack hashCrack = hashCracks.get(id);
-        logger.info(id + ": Returning hash crack: " + hashCrack);
-        return hashCrack;
+    public HashCrackState getHashCrack(@RequestParam UUID id) {
+        checkIfIdIsPresent(id);
+        final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
+        logger.info(id + ": Returning hash crack: " + hashCrackState);
+        return hashCrackState;
     }
 
     @PatchMapping("${internalApiPrefix}/crack/request")
     public void patchHashCrack(@RequestBody HashCrackPatch patch) {
         final UUID id = patch.id();
-        checkId(id);
+        checkIfIdIsPresent(id);
         final List<String> results = patch.results();
 
-        // update hash crack
+        updateHashCrack(id, results);
+        logResults(id, results);
+        if (allWorkersFinished(id) || !results.isEmpty())
+            hashCrackTimer.cancelTimeout(id);
+    }
+
+    private void updateHashCrack(UUID id, List<String> results) {
+        final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
+        hashCrackState.addResults(results);
+        hashCrackUpdateCount.computeIfPresent(id, (uuid, prev) -> prev + 1);
+        final int updateCount = hashCrackUpdateCount.get(id);
+        if (allWorkersFinished(id) && hashCrackState.error()) {
+            logger.info(id + ": All workers have finished working and no results were found");
+        }
+    }
+
+    private boolean allWorkersFinished(UUID id) {
+        return hashCrackUpdateCount.get(id) == workersCount;
+    }
+
+    private void logResults(UUID id, List<String> results) {
         if (!results.isEmpty()) {
-            final HashCrack hashCrack = hashCracks.get(id);
-            hashCrack.addResults(results);
-            if (timeoutFutures.containsKey(id)) {
-                timeoutFutures.get(id).cancel(false);
-                timeoutFutures.remove(id);
-            }
             logger.info(id + ": Worker found results: " + results);
         } else {
             logger.info(id + ": Worker found no results");
         }
     }
 
-    private void checkId(UUID id) {
-        if (!hashCracks.containsKey(id)) {
+    private void checkIfIdIsPresent(UUID id) {
+        if (!hashCrackRequests.containsKey(id)) {
             final var ex = new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "No hash crack for given UUID");
             logger.warn("No crack hash for given UUID", ex);
@@ -142,15 +141,15 @@ public class ManagerController {
         }
     }
 
-    private Map<String, HashCrackTask> createWorkerTask(UUID id, HashCrackRequest request) {
+    private List<HashCrackTask> createWorkerTask(UUID id, HashCrackRequest request) {
         final String hash = request.hash();
         final int maxLength = request.maxLength();
-        final int partCount = numberOfWorkers;
+        final int partCount = workersCount;
         int partNumber = 0;
 
-        final Map<String, HashCrackTask> tasksMap = new HashMap<>();
+        final List<HashCrackTask> tasks = new ArrayList<>();
 
-        for (String workerUrl : workerUrls) {
+        for (int i = 0; i < partCount; ++i) {
             final HashCrackTask task = HashCrackTaskBuilder.create()
                     .id(id)
                     .hash(hash)
@@ -160,47 +159,9 @@ public class ManagerController {
                     .alphabet(alphabet)
                     .build();
             ++partNumber;
-            tasksMap.put(workerUrl, task);
+            tasks.add(task);
         }
         logger.debug(id + ": Created tasks for workers");
-        return tasksMap;
-    }
-
-    private void sendTasksToWorkers(Map<String, HashCrackTask> tasksMap) {
-        logger.debug("Sending tasks to workers");
-        for (var taskEntry : tasksMap.entrySet()) {
-            final String workerUrl = taskEntry.getKey();
-            final HashCrackTask task = taskEntry.getValue();
-            logger.trace(String.format("Sending task to worker (%s): %s", workerUrl, task));
-            webClient.post()
-                    .uri(workerUrl + postHashCrackTaskPath)
-                    .bodyValue(task)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is5xxServerError,
-                            response -> Mono.error(new WorkerUnavailableException(response.statusCode())))
-                    .bodyToMono(Void.class)
-                    .retryWhen(Retry.backoff(ATTEMPTS, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
-                            .jitter(JITTER)
-                            .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
-                                final var ex = new WorkerUnavailableException(
-                                        String.format("Unable to reach worker (%s) after %d attempts", workerUrl, ATTEMPTS),
-                                        HttpStatus.SERVICE_UNAVAILABLE);
-                                logger.debug(task.id() + ": Worker unavailable", ex);
-                                return ex;
-                            }))
-                    .doOnError(throwable ->
-                            logger.warn(String.format("Error occurred while sending task to worker (%s)", workerUrl), throwable))
-                    .subscribe();
-        }
-    }
-
-    private void checkMaxLength(int maxLength) {
-        if (MAX_LENGTH < maxLength || maxLength < MIN_LENGTH) {
-            final var ex = new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    String.format("maxLength should be in [%d, %d]", MIN_LENGTH, MAX_LENGTH));
-            logger.warn("Request declined", ex);
-            throw ex;
-        }
+        return tasks;
     }
 }
