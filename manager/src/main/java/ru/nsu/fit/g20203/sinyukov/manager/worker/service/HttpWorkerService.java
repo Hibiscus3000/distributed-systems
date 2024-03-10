@@ -1,4 +1,4 @@
-package ru.nsu.fit.g20203.sinyukov.manager.workerservice;
+package ru.nsu.fit.g20203.sinyukov.manager.worker.service;
 
 import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;

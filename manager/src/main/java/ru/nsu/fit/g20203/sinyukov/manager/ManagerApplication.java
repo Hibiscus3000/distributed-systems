@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import ru.nsu.fit.g20203.sinyukov.manager.workerservice.HttpWorkerService;
-import ru.nsu.fit.g20203.sinyukov.manager.workerservice.WorkerService;
+import ru.nsu.fit.g20203.sinyukov.manager.worker.service.HttpWorkerService;
+import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
 
 @SpringBootApplication
 @OpenAPIDefinition
