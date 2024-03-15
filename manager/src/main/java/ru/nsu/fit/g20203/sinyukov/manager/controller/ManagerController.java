@@ -1,20 +1,17 @@
 package ru.nsu.fit.g20203.sinyukov.manager.controller;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequestRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackState;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackTimer;
 import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.requestvalidation.KnownRequestId;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreationInfo;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreator;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
@@ -33,20 +30,22 @@ public class ManagerController {
     private final int numberOfWorkers;
     private final List<String> alphabet;
 
+    private final HashCrackRequestRepository hashCrackRequestRepository;
     private final WorkerService workerService;
     private final HashCrackStateRepository hashCrackStateRepository;
     private final HashCrackTimer hashCrackTimer;
 
-    private final BiMap<UUID, HashCrackRequest> hashCrackRequests = Maps.synchronizedBiMap(HashBiMap.create());
     private final Map<UUID, Integer> hashCrackUpdateCount = new HashMap<>();
 
     public ManagerController(@Value("${workers.count}") int numberOfWorkers,
                              @Value("${alphabet}") List<String> alphabet,
+                             HashCrackRequestRepository hashCrackRequestRepository,
                              HashCrackStateRepository hashCrackStateRepository,
                              WorkerService workerService,
                              HashCrackTimer hashCrackTimer) {
         this.numberOfWorkers = numberOfWorkers;
         this.alphabet = alphabet;
+        this.hashCrackRequestRepository = hashCrackRequestRepository;
         this.workerService = workerService;
         this.hashCrackStateRepository = hashCrackStateRepository;
         this.hashCrackTimer = hashCrackTimer;
@@ -54,20 +53,19 @@ public class ManagerController {
 
     @PostMapping("${externalApiPrefix}/crack")
     public UUID postHashCrackRequest(@RequestBody HashCrackRequest request) {
-        if (!hashCrackRequests.containsValue(request)) {
+        if (!hashCrackRequestRepository.containsRequest(request)) {
             createAndSendNewTask(request);
         } else {
             logRepeatedRequest(request);
         }
-        return getIdForRequest(request);
+        return hashCrackRequestRepository.getRequestId(request);
     }
 
     private void createAndSendNewTask(HashCrackRequest request) {
         final UUID id = UUID.randomUUID();
         logger.info(id + ": Received new request: " + request);
 
-        // store request
-        hashCrackRequests.put(id, request);
+        hashCrackRequestRepository.addRequest(id, request);
 
         createNewHashCrack(id);
 
@@ -83,34 +81,19 @@ public class ManagerController {
     }
 
     private void logRepeatedRequest(HashCrackRequest request) {
-        logger.info(getIdForRequest(request) + ": Received repeated request: " + request);
-    }
-
-    private UUID getIdForRequest(HashCrackRequest request) {
-        return hashCrackRequests.inverse().get(request);
+        logger.info(hashCrackRequestRepository.getRequestId(request) + ": Received repeated request: " + request);
     }
 
     @GetMapping("${externalApiPrefix}/status")
-    public HashCrackState getHashCrack(@RequestParam UUID id) {
-        checkIfIdIsPresent(id);
+    public HashCrackState getHashCrack(@RequestParam @KnownRequestId UUID id) {
         final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
         logger.info(id + ": Returning hash crack: " + hashCrackState);
         return hashCrackState;
     }
 
-    private void checkIfIdIsPresent(UUID id) {
-        if (!hashCrackRequests.containsKey(id)) {
-            final var ex = new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No hash crack for given UUID");
-            logger.warn("No crack hash for given UUID", ex);
-            throw ex;
-        }
-    }
-
     @PatchMapping("${internalApiPrefix}/crack/request")
     public void patchHashCrack(@RequestBody HashCrackPatch patch) {
         final UUID id = patch.id();
-        checkIfIdIsPresent(id);
         final List<String> results = patch.results();
 
         updateHashCrack(id, results);
