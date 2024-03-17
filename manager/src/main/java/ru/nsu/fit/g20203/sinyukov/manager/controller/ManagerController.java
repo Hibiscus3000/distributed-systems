@@ -1,5 +1,6 @@
 package ru.nsu.fit.g20203.sinyukov.manager.controller;
 
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +53,7 @@ public class ManagerController {
     }
 
     @PostMapping("${externalApiPrefix}/crack")
-    public UUID postHashCrackRequest(@RequestBody HashCrackRequest request) {
+    public UUID postHashCrackRequest(@RequestBody @Valid HashCrackRequest request) {
         if (!hashCrackRequestRepository.containsRequest(request)) {
             createAndSendNewTask(request);
         } else {
