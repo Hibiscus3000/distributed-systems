@@ -21,4 +21,9 @@ public class InMemoryHashCrackStateRepository implements HashCrackStateRepositor
     public HashCrackState getHashCrack(UUID id) {
         return hashCracks.get(id);
     }
+
+    @Override
+    public boolean containsId(UUID id) {
+        return hashCracks.containsKey(id);
+    }
 }

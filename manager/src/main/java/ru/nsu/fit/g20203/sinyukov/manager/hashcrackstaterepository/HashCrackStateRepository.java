@@ -9,4 +9,6 @@ public interface HashCrackStateRepository {
     void createNewHashCrack(UUID id);
 
     HashCrackState getHashCrack(UUID id);
+
+    boolean containsId(UUID id);
 }

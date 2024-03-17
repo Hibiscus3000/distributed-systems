@@ -2,6 +2,7 @@ package ru.nsu.fit.g20203.sinyukov.manager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class HashCrackState {
 
@@ -41,5 +42,18 @@ public class HashCrackState {
     @Override
     public String toString() {
         return String.format("%s[%s, %s]", HashCrackState.class.getSimpleName(), status, results);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HashCrackState that = (HashCrackState) o;
+        return status == that.status && Objects.equals(results, that.results);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(status, results);
     }
 }
