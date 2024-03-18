@@ -16,10 +16,9 @@ import ru.nsu.fit.g20203.sinyukov.manager.requestvalidation.KnownRequestId;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreationInfo;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreator;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
+import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -35,13 +34,13 @@ public class ManagerController {
     private final WorkerService workerService;
     private final HashCrackStateRepository hashCrackStateRepository;
     private final HashCrackTimer hashCrackTimer;
-
-    private final Map<UUID, Integer> hashCrackUpdateCount = new HashMap<>();
+    private final WorkersUpdateRepository workersUpdateRepository;
 
     public ManagerController(@Value("${workers.count}") int numberOfWorkers,
                              @Value("${alphabet}") List<String> alphabet,
                              HashCrackRequestRepository hashCrackRequestRepository,
                              HashCrackStateRepository hashCrackStateRepository,
+                             WorkersUpdateRepository workersUpdateRepository,
                              WorkerService workerService,
                              HashCrackTimer hashCrackTimer) {
         this.numberOfWorkers = numberOfWorkers;
@@ -50,6 +49,7 @@ public class ManagerController {
         this.workerService = workerService;
         this.hashCrackStateRepository = hashCrackStateRepository;
         this.hashCrackTimer = hashCrackTimer;
+        this.workersUpdateRepository = workersUpdateRepository;
     }
 
     @PostMapping("${externalApiPrefix}/crack")
@@ -78,7 +78,7 @@ public class ManagerController {
 
     private void createNewHashCrack(UUID id) {
         hashCrackStateRepository.createNewHashCrack(id);
-        hashCrackUpdateCount.put(id, 0);
+        workersUpdateRepository.create(id);
     }
 
     private void logRepeatedRequest(HashCrackRequest request) {
@@ -99,22 +99,17 @@ public class ManagerController {
 
         updateHashCrack(id, results);
         logResults(id, results);
-        if (allWorkersFinished(id) || !results.isEmpty())
+        if (workersUpdateRepository.areAllWorkersFinished(id) || !results.isEmpty())
             hashCrackTimer.cancelTimeout(id);
     }
 
     private void updateHashCrack(UUID id, List<String> results) {
         final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
         hashCrackState.addResults(results);
-        hashCrackUpdateCount.computeIfPresent(id, (uuid, prev) -> prev + 1);
-        final int updateCount = hashCrackUpdateCount.get(id);
-        if (allWorkersFinished(id) && hashCrackState.error()) {
+        workersUpdateRepository.update(id);
+        if (workersUpdateRepository.areAllWorkersFinished(id) && hashCrackState.error()) {
             logger.info(id + ": All workers have finished working and no results were found");
         }
-    }
-
-    private boolean allWorkersFinished(UUID id) {
-        return hashCrackUpdateCount.get(id) == numberOfWorkers;
     }
 
     private void logResults(UUID id, List<String> results) {
