@@ -31,6 +31,12 @@ public class HashCrackState {
         }
     }
 
+    public synchronized boolean ready() {
+        final boolean wasReady = HashCrackStatus.READY == status;
+        status = HashCrackStatus.READY;
+        return wasReady;
+    }
+
     public synchronized HashCrackStatus getStatus() {
         return status;
     }

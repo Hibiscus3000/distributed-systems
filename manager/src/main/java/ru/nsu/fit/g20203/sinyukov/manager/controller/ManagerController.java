@@ -107,8 +107,8 @@ public class ManagerController {
         final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
         hashCrackState.addResults(results);
         workersUpdateRepository.update(id);
-        if (workersUpdateRepository.areAllWorkersFinished(id) && hashCrackState.error()) {
-            logger.info(id + ": All workers have finished working and no results were found");
+        if (workersUpdateRepository.areAllWorkersFinished(id) && hashCrackState.ready()) {
+            logger.info(String.format("%s: All workers have finished working, found results %s", id, hashCrackState.getResults()));
         }
     }
 
