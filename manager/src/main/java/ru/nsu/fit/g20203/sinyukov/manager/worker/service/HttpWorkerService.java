@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -21,7 +20,6 @@ import java.util.List;
 
 @Primary
 @Service
-@PropertySource("classpath:application.yml")
 public class HttpWorkerService implements WorkerService {
 
     private final Logger logger = LoggerFactory.getLogger(HttpWorkerService.class);
