@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@PropertySource("classpath:application.yml")
 public class ManagerController {
 
     private final Logger logger = LoggerFactory.getLogger(ManagerController.class);
