@@ -7,14 +7,14 @@ import java.util.UUID;
 
 public class HashCrackRequestRepositoryTests {
 
-    private static final String exampleHash = "e2fc714c4727ee9395f324cd2e7f331f";
-    private static final int exampleMaxLength = 4;
+    private static final String testHash = "e2fc714c4727ee9395f324cd2e7f331f";
+    private static final int testMaxLength = 4;
 
     @Test
     void givenRequest_thenReturnContainsGivenRequest() {
         final var hashCrackRequestRepository = new HashCrackRequestRepository();
         final var id = UUID.randomUUID();
-        final var request = new HashCrackRequest(exampleHash, exampleMaxLength);
+        final var request = new HashCrackRequest(testHash, testMaxLength);
 
         hashCrackRequestRepository.addRequest(id, request);
 

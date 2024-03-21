@@ -37,10 +37,10 @@ class ManagerControllerTests {
 
     private final WebTestClient client;
 
-    private static final String exampleHash = "e2fc714c4727ee9395f324cd2e7f331f";
+    private static final String testHash = "e2fc714c4727ee9395f324cd2e7f331f";
     private static final String invalidHash = "123";
 
-    private static final List<String> exampleResults = List.of("abcd");
+    private static final List<String> testResults = List.of("abcd");
     
     public ManagerControllerTests(@Autowired WebTestClient client) {
         this.client = client;
@@ -48,7 +48,7 @@ class ManagerControllerTests {
 
     @Test
     public void givenValidRequest_whenPostHashCrackRequest_thenReturnOk() {
-        final HashCrackRequest request = new HashCrackRequest(exampleHash, 4);
+        final HashCrackRequest request = new HashCrackRequest(testHash, 4);
         client.post()
                 .uri("/api/hash/crack")
                 .body(Mono.just(request), HashCrackRequest.class)
@@ -69,8 +69,8 @@ class ManagerControllerTests {
     private static Stream<Arguments> provideInvalidRequests() {
         return Stream.of(
                 Arguments.of(new TestHashCrackRequest(invalidHash, 4)),
-                Arguments.of(new TestHashCrackRequest(exampleHash, 40)),
-                Arguments.of(new TestHashCrackRequest(exampleHash, -10))
+                Arguments.of(new TestHashCrackRequest(testHash, 40)),
+                Arguments.of(new TestHashCrackRequest(testHash, -10))
         );
     }
 
@@ -78,7 +78,7 @@ class ManagerControllerTests {
     public void givenHashCrackState_whenGetHashCrack_thenReturnHashCrackState() {
         final UUID id = UUID.randomUUID();
         final HashCrackState hashCrackState = new HashCrackState();
-        hashCrackState.addResults(exampleResults);
+        hashCrackState.addResults(testResults);
         addHashCrackStateInRepositoryMock(id, hashCrackState);
 
         client.get()
@@ -91,7 +91,7 @@ class ManagerControllerTests {
                 .expectBody(HashCrackState.class)
                 .consumeWith(exchangeResult -> {
                     final HashCrackState actualHashCrackState = exchangeResult.getResponseBody();
-                    Assertions.assertLinesMatch(exampleResults, actualHashCrackState.getResults());
+                    Assertions.assertLinesMatch(testResults, actualHashCrackState.getResults());
                     Assertions.assertEquals(HashCrackState.HashCrackStatus.READY, actualHashCrackState.getStatus());
                 });
     }
@@ -129,11 +129,11 @@ class ManagerControllerTests {
 
         client.patch()
                 .uri("/internal/api/manager/hash/crack/request")
-                .body(Mono.just(new HashCrackPatch(id, exampleResults)), HashCrackPatch.class)
+                .body(Mono.just(new HashCrackPatch(id, testResults)), HashCrackPatch.class)
                 .exchange()
                 .expectStatus().isOk();
 
-        Assertions.assertLinesMatch(exampleResults, hashCrackState.getResults());
+        Assertions.assertLinesMatch(testResults, hashCrackState.getResults());
         Assertions.assertEquals(HashCrackState.HashCrackStatus.READY, hashCrackState.getStatus());
     }
 }
