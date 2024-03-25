@@ -1,8 +1,9 @@
 package ru.nsu.fit.g20203.sinyukov.manager;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class HashCrackState {
 
@@ -11,7 +12,7 @@ public class HashCrackState {
     }
 
     private HashCrackStatus status = HashCrackStatus.IN_PROGRESS;
-    private final List<String> results = new ArrayList<>();
+    private final Set<String> results = new HashSet<>();
 
     public synchronized boolean error() {
         if (HashCrackStatus.IN_PROGRESS == status) {
@@ -41,7 +42,7 @@ public class HashCrackState {
         return status;
     }
 
-    public synchronized List<String> getResults() {
+    public synchronized Set<String> getResults() {
         return results;
     }
 
