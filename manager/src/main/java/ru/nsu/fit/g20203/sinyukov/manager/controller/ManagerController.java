@@ -18,6 +18,7 @@ import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -93,7 +94,7 @@ public class ManagerController {
     @PatchMapping("${internalApiPrefix}/crack/request")
     public void patchHashCrack(@RequestBody HashCrackPatch patch) {
         final UUID id = patch.id();
-        final List<String> results = patch.results();
+        final Set<String> results = patch.results();
 
         updateHashCrack(id, results);
         logResults(id, results);
@@ -101,7 +102,7 @@ public class ManagerController {
             hashCrackTimer.cancelTimeout(id);
     }
 
-    private void updateHashCrack(UUID id, List<String> results) {
+    private void updateHashCrack(UUID id, Set<String> results) {
         final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
         hashCrackState.addResults(results);
         workersUpdateRepository.update(id);
@@ -110,7 +111,7 @@ public class ManagerController {
         }
     }
 
-    private void logResults(UUID id, List<String> results) {
+    private void logResults(UUID id, Set<String> results) {
         if (!results.isEmpty()) {
             logger.info(id + ": Worker found results: " + results);
         } else {

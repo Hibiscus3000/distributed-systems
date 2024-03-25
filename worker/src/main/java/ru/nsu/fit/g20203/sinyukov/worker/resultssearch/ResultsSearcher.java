@@ -5,10 +5,7 @@ import org.paukov.combinatorics3.Generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static ru.nsu.fit.g20203.sinyukov.worker.WorkerUtil.numberOfWordsOfGivenLength;
@@ -24,7 +21,7 @@ public class ResultsSearcher {
     private final int startLength;
     private final long wordsToSkip;
 
-    private final List<String> results = new ArrayList<>();
+    private final Set<String> results = new HashSet<>();
     private long wordsCheckedTotal = 0;
     private boolean used = false;
 
@@ -90,7 +87,7 @@ public class ResultsSearcher {
         }
     }
 
-    private void checkAndAddToResults(List<String> results, String hash, String word) {
+    private void checkAndAddToResults(Set<String> results, String hash, String word) {
         final String wordHash = DigestUtils.md5Hex(word);
         if (wordHash.equals(hash)) {
             logger.debug("Worker found result: " + word);
@@ -98,7 +95,7 @@ public class ResultsSearcher {
         }
     }
 
-    public List<String> getResults() {
+    public Set<String> getResults() {
         return results;
     }
 

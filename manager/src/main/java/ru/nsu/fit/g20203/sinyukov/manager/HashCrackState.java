@@ -1,7 +1,6 @@
 package ru.nsu.fit.g20203.sinyukov.manager;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -22,7 +21,7 @@ public class HashCrackState {
         return false;
     }
 
-    public synchronized void addResults(List<String> results) {
+    public synchronized void addResults(Set<String> results) {
         if (HashCrackStatus.ERROR == status) {
             return;
         }

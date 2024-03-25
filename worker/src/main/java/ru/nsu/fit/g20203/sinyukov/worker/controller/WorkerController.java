@@ -12,7 +12,7 @@ import ru.nsu.fit.g20203.sinyukov.worker.managerservice.ManagerService;
 import ru.nsu.fit.g20203.sinyukov.worker.resultssearch.ResultsSearcher;
 import ru.nsu.fit.g20203.sinyukov.worker.resultssearch.ResultsSearcherFactory;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,19 +45,19 @@ public class WorkerController {
         executorService.submit(() -> {
             final ResultsSearcher resultsSearcher = ResultsSearcherFactory.create(task);
             logger.debug(id + ": Results searcher created: " + resultsSearcher);
-            final List<String> results = findResults(id, resultsSearcher);
+            final Set<String> results = findResults(id, resultsSearcher);
             sendHashCrackPatch(id, results);
         });
     }
 
-    private List<String> findResults(UUID id, ResultsSearcher resultsSearcher) {
+    private Set<String> findResults(UUID id, ResultsSearcher resultsSearcher) {
         resultsSearcher.findResults();
-        final List<String> results = resultsSearcher.getResults();
+        final Set<String> results = resultsSearcher.getResults();
         logResults(id, results);
         return results;
     }
 
-    private void logResults(UUID id, List<String> results) {
+    private void logResults(UUID id, Set<String> results) {
         if (results.isEmpty()) {
             logger.info(id + ": Worker found no results");
         } else {
@@ -65,7 +65,7 @@ public class WorkerController {
         }
     }
 
-    private void sendHashCrackPatch(UUID id, List<String> results) {
+    private void sendHashCrackPatch(UUID id, Set<String> results) {
         final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, results);
         managerService.dispatchHashCrackPatchToManager(hashCrackPatch);
     }
