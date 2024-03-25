@@ -37,9 +37,14 @@ public class WorkerController {
             final UUID id = task.id();
             logger.info(id + ": Task received: " + task);
 
+            findAndSendResults(id, task);
+        });
+    }
+
+    private void findAndSendResults(UUID id, HashCrackTask task) {
+        executorService.submit(() -> {
             final ResultsSearcher resultsSearcher = ResultsSearcherFactory.create(task);
             logger.debug(id + ": Results searcher created: " + resultsSearcher);
-
             final List<String> results = findResults(id, resultsSearcher);
             sendHashCrackPatch(id, results);
         });
