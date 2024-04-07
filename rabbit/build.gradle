@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+}
+
+group = 'ru.nsu.fit.g20203.sinyukov.rabbit'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'org.springframework.boot:spring-boot-starter-amqp:3.2.4'
+    implementation 'org.yaml:snakeyaml:2.2'
+
+
+    implementation project(':lib')
+
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,16 @@
+spring:
+  rabbitmq:
+    tasks:
+      exchange:
+        "tasks"
+      binding-key:
+        "tasks_bk"
+      queue:
+        "tasks"
+    results:
+      exchange:
+        "results"
+      binding-key:
+        "results_bk"
+      queue:
+        "results"
