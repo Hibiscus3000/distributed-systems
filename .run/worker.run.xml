@@ -2,7 +2,8 @@
     <configuration default="false" name="worker" type="Application" factoryName="Application">
         <option name="MAIN_CLASS_NAME" value="ru.nsu.fit.g20203.sinyukov.worker.WorkerApplication"/>
         <module name="distributed-systems.worker.main"/>
-        <option name="VM_PARAMETERS" value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.worker=TRACE"/>
+        <option name="VM_PARAMETERS"
+                value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.worker=TRACE -Dspring.profiles.active=dev"/>
         <method v="2">
             <option name="Make" enabled="true"/>
         </method>

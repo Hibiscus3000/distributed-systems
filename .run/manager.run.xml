@@ -2,7 +2,8 @@
     <configuration default="false" name="manager" type="Application" factoryName="Application">
         <option name="MAIN_CLASS_NAME" value="ru.nsu.fit.g20203.sinyukov.manager.ManagerApplication"/>
         <module name="distributed-systems.manager.main"/>
-        <option name="VM_PARAMETERS" value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.manager=TRACE"/>
+        <option name="VM_PARAMETERS"
+                value="-Dlogging.level.ru.nsu.fit.g20203.sinyukov.manager=TRACE  -Dspring.profiles.active=dev"/>
         <method v="2">
             <option name="Make" enabled="true"/>
         </method>
