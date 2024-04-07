@@ -13,6 +13,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.manager.controller.ManagerController;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackrequestrepository.HashCrackRequestRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;

@@ -4,7 +4,6 @@ import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -18,7 +17,6 @@ import ru.nsu.fit.g20203.sinyukov.manager.WorkerUnavailableException;
 import java.time.Duration;
 import java.util.List;
 
-@Primary
 @Service
 public class HttpWorkerService implements WorkerService {
 
@@ -36,7 +34,7 @@ public class HttpWorkerService implements WorkerService {
 
     public HttpWorkerService(@Value("${workers.count}") int workersCount,
                              @Value("${workers.urls}") String[] workerUrls,
-                             @Value("${workers.postHashCrackTask.path}") String postHashCrackTaskPath) {
+                             @Value("${workers.post-hash-crack-task.path}") String postHashCrackTaskPath) {
         this.workerUrls = workerUrls;
         this.workersCount = workersCount;
         this.postHashCrackTaskPath = postHashCrackTaskPath;

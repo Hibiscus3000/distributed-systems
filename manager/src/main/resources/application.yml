@@ -1,6 +1,6 @@
-externalApiPrefix:
+external-api-prefix:
   /api/hash
-internalApiPrefix:
+internal-api-prefix:
   /internal/api/manager/hash
 springdoc:
   swagger-ui:
@@ -13,10 +13,14 @@ workers:
     1
   urls:
     http://localhost:8081
-  postHashCrackTask:
+  post-hash-crack-task:
     path:
       /internal/api/worker/hash/crack/task
 server:
   error:
     include-message:
       always
+spring:
+  rabbitmq:
+    prefetch-count:
+      100

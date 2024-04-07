@@ -1,17 +1,13 @@
 package ru.nsu.fit.g20203.sinyukov.manager.worker.update;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Primary
 @Repository
-@PropertySource("classpath:application.yml")
 public class InMemoryWorkersUpdateRepository implements WorkersUpdateRepository {
 
     private final int numberOfWorkers;

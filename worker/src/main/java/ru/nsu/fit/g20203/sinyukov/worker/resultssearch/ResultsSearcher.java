@@ -25,7 +25,12 @@ public class ResultsSearcher {
     private long wordsCheckedTotal = 0;
     private boolean used = false;
 
-    public ResultsSearcher(List<String> alphabet, String hash, int maxLength, long wordsToCheckTotal, int startLength, long wordsToSkip) {
+    public ResultsSearcher(List<String> alphabet,
+                           String hash,
+                           int maxLength,
+                           long wordsToCheckTotal,
+                           int startLength,
+                           long wordsToSkip) {
         this.alphabet = alphabet;
         this.hash = hash;
         this.maxLength = maxLength;

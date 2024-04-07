@@ -10,6 +10,10 @@ public record HashCrackTask(@NotNull UUID id,
                             @NotNull List<String> alphabet,
                             int maxLength,
                             int partNumber,
-                            int partCount) {
+                            int partCount) implements Identifiable {
 
+    @Override
+    public UUID getId() {
+        return id;
+    }
 }

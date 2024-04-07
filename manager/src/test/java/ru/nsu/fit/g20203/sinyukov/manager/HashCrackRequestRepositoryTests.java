@@ -2,6 +2,7 @@ package ru.nsu.fit.g20203.sinyukov.manager;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackrequestrepository.HashCrackRequestRepository;
 
 import java.util.UUID;
 

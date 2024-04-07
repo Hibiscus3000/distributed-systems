@@ -1,9 +1,8 @@
-package ru.nsu.fit.g20203.sinyukov.worker.managerservice;
+package ru.nsu.fit.g20203.sinyukov.worker.manager.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -18,7 +17,6 @@ import ru.nsu.fit.g20203.sinyukov.worker.ManagerUnavailableException;
 import java.time.Duration;
 import java.util.UUID;
 
-@Primary
 @Service
 public class HttpManagerService implements ManagerService {
 
@@ -33,9 +31,9 @@ public class HttpManagerService implements ManagerService {
     private final WebClient webClient;
     private final String patchHashCrackUrl;
 
-    public HttpManagerService(@Value("${manager.baseUrl}") String managerBaseUrl,
-                              @Value("${manager.apiPrefix}") String managerApiPrefix,
-                              @Value("${manager.patchHashCrack.path}") String patchHashCrackUrl) {
+    public HttpManagerService(@Value("${manager.base-url}") String managerBaseUrl,
+                              @Value("${manager.api-prefix}") String managerApiPrefix,
+                              @Value("${manager.patch-hash-crack.path}") String patchHashCrackUrl) {
         webClientBaseUrl = managerBaseUrl + managerApiPrefix;
         this.webClient = WebClient.create(webClientBaseUrl);
         this.patchHashCrackUrl = patchHashCrackUrl;

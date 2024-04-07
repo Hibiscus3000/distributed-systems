@@ -1,15 +1,15 @@
-internalApiPrefix:
+internal-api-prefix:
   /internal/api/worker/hash
 springdoc:
   swagger-ui:
     path:
       /
 manager:
-  baseUrl:
+  base-url:
     http://localhost:8080
-  apiPrefix:
+  api-prefix:
     /internal/api/manager/hash
-  patchHashCrack:
+  patch-hash-crack:
     path:
       /crack/request
 server:
@@ -18,3 +18,7 @@ server:
   error:
     include-message:
       always
+spring:
+  rabbitmq:
+    prefetch-count:
+      1
