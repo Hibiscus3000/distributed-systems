@@ -14,7 +14,7 @@ public class InMemoryHashCrackStateRepositoryTests {
         final var hashCrackStateRepository = new InMemoryHashCrackStateRepository();
         final var id = UUID.randomUUID();
 
-        final HashCrackState expectedHashCrackState = new HashCrackState();
+        final HashCrackState expectedHashCrackState = new HashCrackState(id);
 
         hashCrackStateRepository.createNewHashCrack(id);
 

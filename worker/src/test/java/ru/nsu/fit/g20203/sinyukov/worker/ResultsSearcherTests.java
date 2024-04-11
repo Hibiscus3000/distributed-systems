@@ -25,12 +25,12 @@ public class ResultsSearcherTests {
 
         resultsSearcher.findResults();
 
-        Assertions.assertEquals(results, resultsSearcher.getResults());
+        Assertions.assertLinesMatch(results.stream(), resultsSearcher.getResults().stream());
     }
 
     private static Stream<Arguments> provideHashCrackTasksAndCorrectResults() {
         return Stream.of(
-                Arguments.of(new HashCrackTask(UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 1),
+                Arguments.of(new HashCrackTask(UUID.randomUUID(), UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 1),
                         List.of("abcd"))
         );
     }

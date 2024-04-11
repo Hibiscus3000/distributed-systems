@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -15,12 +16,13 @@ import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.manager.controller.ManagerController;
 import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.HashCrackState;
 import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.repository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcracktask.MongoHashCrackTaskRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
 import ru.nsu.fit.g20203.sinyukov.manager.request.repository.HashCrackRequestRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -37,14 +39,20 @@ class ManagerControllerTests {
     private HashCrackTimer hashCrackTimer;
     @MockBean
     private WorkersUpdateRepository workersUpdateRepository;
+    @MockBean
+    private MongoHashCrackTaskRepository hashCrackTaskRepository;
+    @MockBean
+    private RequestProcessor requestProcessor;
+    @MockBean
+    private PatchProcessor patchProcessor;
 
     private final WebTestClient client;
 
     private static final String testHash = "e2fc714c4727ee9395f324cd2e7f331f";
     private static final String invalidHash = "123";
 
-    private static final List<String> testResults = List.of("abcd");
-    
+    private static final Set<String> testResults = Set.of("abcd");
+
     public ManagerControllerTests(@Autowired WebTestClient client) {
         this.client = client;
     }
@@ -80,9 +88,9 @@ class ManagerControllerTests {
     @Test
     public void givenHashCrackState_whenGetHashCrack_thenReturnHashCrackState() {
         final UUID id = UUID.randomUUID();
-        final HashCrackState hashCrackState = new HashCrackState();
+        final HashCrackState hashCrackState = new HashCrackState(id);
         hashCrackState.addResults(testResults);
-        addHashCrackStateInRepositoryMock(id, hashCrackState);
+        addHashCrackStateInMocks(id, hashCrackState);
 
         client.get()
                 .uri(uriBuilder -> uriBuilder
@@ -94,14 +102,20 @@ class ManagerControllerTests {
                 .expectBody(HashCrackState.class)
                 .consumeWith(exchangeResult -> {
                     final HashCrackState actualHashCrackState = exchangeResult.getResponseBody();
-                    Assertions.assertLinesMatch(testResults, actualHashCrackState.getResults());
+                    Assertions.assertLinesMatch(testResults.stream(), actualHashCrackState.getResults().stream());
                     Assertions.assertEquals(HashCrackState.HashCrackStatus.READY, actualHashCrackState.getStatus());
                 });
     }
 
-    private void addHashCrackStateInRepositoryMock(UUID id, HashCrackState hashCrackState) {
+    private void addHashCrackStateInMocks(UUID id, HashCrackState hashCrackState) {
         Mockito.when(hashCrackStateRepository.getHashCrack(id)).thenReturn(hashCrackState);
         Mockito.when(hashCrackStateRepository.containsId(id)).thenReturn(true);
+        Mockito.doAnswer(invocation -> {
+                    hashCrackState.addResults(testResults);
+                    return null;
+                })
+                .when(patchProcessor)
+                .process(ArgumentMatchers.any());
     }
 
     @ParameterizedTest
@@ -126,17 +140,17 @@ class ManagerControllerTests {
     @Test
     public void givenHashCrackState_whenPatchHashCrack_thenUpdateHashCrackState() {
         final UUID id = UUID.randomUUID();
-        final HashCrackState hashCrackState = new HashCrackState();
-        addHashCrackStateInRepositoryMock(id, hashCrackState);
+        final HashCrackState hashCrackState = new HashCrackState(id);
+        addHashCrackStateInMocks(id, hashCrackState);
         Mockito.when(workersUpdateRepository.areAllWorkersFinished(id)).thenReturn(true);
 
         client.patch()
                 .uri("/internal/api/manager/hash/crack/request")
-                .body(Mono.just(new HashCrackPatch(id, testResults)), HashCrackPatch.class)
+                .body(Mono.just(new HashCrackPatch(id, 0, testResults)), HashCrackPatch.class)
                 .exchange()
                 .expectStatus().isOk();
 
-        Assertions.assertLinesMatch(testResults, hashCrackState.getResults());
+        Assertions.assertLinesMatch(testResults.stream(), hashCrackState.getResults().stream());
         Assertions.assertEquals(HashCrackState.HashCrackStatus.READY, hashCrackState.getStatus());
     }
 }

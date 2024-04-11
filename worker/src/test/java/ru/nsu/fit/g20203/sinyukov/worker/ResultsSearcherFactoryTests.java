@@ -28,11 +28,11 @@ public class ResultsSearcherFactoryTests {
     private static Stream<Arguments> provideHashCrackTasksAndResultSearchers() {
         final long numberOfWordsTotal = WorkerUtil.totalNumberOfWords(testAlphabet.size(), testMaxLength);
         return Stream.of(
-                Arguments.of(new HashCrackTask(UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 1),
+                Arguments.of(new HashCrackTask(UUID.randomUUID(), UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 1),
                         new ResultsSearcher(testAlphabet, testHash, testMaxLength, numberOfWordsTotal, 1, 0)),
-                Arguments.of(new HashCrackTask(UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 2),
+                Arguments.of(new HashCrackTask(UUID.randomUUID(), UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 0, 2),
                         new ResultsSearcher(testAlphabet, testHash, testMaxLength, numberOfWordsTotal / 2, 1, 0)),
-                Arguments.of(new HashCrackTask(UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 1, 2),
+                Arguments.of(new HashCrackTask(UUID.randomUUID(), UUID.randomUUID(), testHash, testAlphabet, testMaxLength, 1, 2),
                         new ResultsSearcher(testAlphabet, testHash, testMaxLength, numberOfWordsTotal / 2, 10, 349_526))
         );
     }

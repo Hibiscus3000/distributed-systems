@@ -3,7 +3,7 @@ package ru.nsu.fit.g20203.sinyukov.manager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
-import ru.nsu.fit.g20203.sinyukov.manager.request.repository.HashCrackRequestRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.request.repository.InMemoryHashCrackRequestRepository;
 
 import java.util.UUID;
 
@@ -14,7 +14,7 @@ public class HashCrackRequestRepositoryTests {
 
     @Test
     void givenRequest_thenReturnContainsGivenRequest() {
-        final var hashCrackRequestRepository = new HashCrackRequestRepository();
+        final var hashCrackRequestRepository = new InMemoryHashCrackRequestRepository();
         final var id = UUID.randomUUID();
         final var request = new HashCrackRequest(testHash, testMaxLength);
 
