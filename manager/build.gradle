@@ -23,7 +23,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux:3.2.2'
     implementation 'org.springframework.boot:spring-boot-starter-validation:3.2.3'
     implementation 'org.springframework.boot:spring-boot-starter-amqp:3.2.4'
-
+    implementation 'org.mongodb:mongodb-driver-sync:5.0.1'
+    implementation 'org.springframework.data:spring-data-mongodb:4.2.4'
+    implementation 'org.mongodb:mongodb-driver-core:5.0.1'
+    
     implementation project(':lib')
     implementation project(':rabbit')
 

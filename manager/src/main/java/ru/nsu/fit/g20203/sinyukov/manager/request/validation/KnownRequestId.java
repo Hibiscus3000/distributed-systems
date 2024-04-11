@@ -1,4 +1,4 @@
-package ru.nsu.fit.g20203.sinyukov.manager.requestvalidation;
+package ru.nsu.fit.g20203.sinyukov.manager.request.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

@@ -1,17 +1,36 @@
-package ru.nsu.fit.g20203.sinyukov.manager;
+package ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate;
+
+import org.springframework.data.annotation.PersistenceCreator;
+import org.springframework.data.mongodb.core.mapping.Document;
+import ru.nsu.fit.g20203.sinyukov.lib.IdentifiableByRequest;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
-public class HashCrackState {
+@Document("states")
+public class HashCrackState implements IdentifiableByRequest {
 
     public enum HashCrackStatus {
         IN_PROGRESS, READY, ERROR
     }
 
-    private HashCrackStatus status = HashCrackStatus.IN_PROGRESS;
-    private final Set<String> results = new HashSet<>();
+    private final UUID id;
+    private HashCrackStatus status;
+    private final Set<String> results;
+
+    @PersistenceCreator
+    public HashCrackState(UUID id, HashCrackStatus status, Set<String> results) {
+        this.id = id;
+        this.status = status;
+        this.results = results;
+    }
+
+    public HashCrackState(UUID id) {
+        this(id, HashCrackStatus.IN_PROGRESS, new HashSet<>());
+    }
+    
 
     public synchronized boolean error() {
         if (HashCrackStatus.IN_PROGRESS == status) {
@@ -26,15 +45,15 @@ public class HashCrackState {
             return;
         }
         this.results.addAll(results);
-        if (!results.isEmpty() && HashCrackStatus.IN_PROGRESS == status) {
+        if (!this.results.isEmpty()) {
             status = HashCrackStatus.READY;
         }
     }
 
-    public synchronized boolean ready() {
-        final boolean wasReady = HashCrackStatus.READY == status;
-        status = HashCrackStatus.READY;
-        return wasReady;
+    public synchronized void setReady() {
+        if (HashCrackStatus.ERROR != status) {
+            status = HashCrackStatus.READY;
+        }
     }
 
     public synchronized HashCrackStatus getStatus() {
@@ -43,6 +62,11 @@ public class HashCrackState {
 
     public synchronized Set<String> getResults() {
         return results;
+    }
+
+    @Override
+    public UUID getRequestId() {
+        return id;
     }
 
     @Override

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
+import ru.nsu.fit.g20203.sinyukov.rabbit.dispatch.DispatchException;
 import ru.nsu.fit.g20203.sinyukov.worker.manager.service.ManagerService;
 import ru.nsu.fit.g20203.sinyukov.worker.resultssearch.ResultsSearcher;
 import ru.nsu.fit.g20203.sinyukov.worker.resultssearch.ResultsSearcherFactory;
@@ -23,17 +24,18 @@ public class Worker {
         this.managerService = managerService;
     }
 
-    public void processTask(HashCrackTask task) {
-        final UUID id = task.id();
+    public void processTask(HashCrackTask task) throws DispatchException {
+        final UUID id = task.getRequestId();
         logger.info(id + ": Task received: " + task);
         findAndSendResults(id, task);
     }
 
-    private void findAndSendResults(UUID id, HashCrackTask task) {
+    private void findAndSendResults(UUID id, HashCrackTask task) throws DispatchException {
         final ResultsSearcher resultsSearcher = ResultsSearcherFactory.create(task);
         logger.debug(id + ": Results searcher created: " + resultsSearcher);
         final Set<String> results = findResults(id, resultsSearcher);
-        sendHashCrackPatch(id, results);
+        final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, task.getPartNumber(), results);
+        managerService.dispatchHashCrackPatchToManager(hashCrackPatch);
     }
 
     private Set<String> findResults(UUID id, ResultsSearcher resultsSearcher) {
@@ -49,10 +51,5 @@ public class Worker {
         } else {
             logger.info(id + ": Worker found results: " + results);
         }
-    }
-
-    private void sendHashCrackPatch(UUID id, Set<String> results) {
-        final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, results);
-        managerService.dispatchHashCrackPatchToManager(hashCrackPatch);
     }
 }

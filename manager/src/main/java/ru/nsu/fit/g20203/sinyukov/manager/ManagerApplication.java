@@ -14,7 +14,7 @@ import ru.nsu.fit.g20203.sinyukov.rabbit.RabbitMQHashConfig;
 
 @SpringBootApplication
 @OpenAPIDefinition
-@Import(RabbitMQHashConfig.class)
+@Import({RabbitMQHashConfig.class, MongoDBHashConfig.class})
 public class ManagerApplication {
 
     public static void main(String[] args) {

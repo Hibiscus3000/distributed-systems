@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTaskBuilder;
-import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,8 @@ public class WorkerTasksCreator {
 
         for (int i = 0; i < partCount; ++i) {
             final HashCrackTask task = HashCrackTaskBuilder.create()
-                    .id(id)
+                    .id(UUID.randomUUID())
+                    .requestId(id)
                     .hash(hash)
                     .maxLength(maxLength)
                     .partCount(partCount)

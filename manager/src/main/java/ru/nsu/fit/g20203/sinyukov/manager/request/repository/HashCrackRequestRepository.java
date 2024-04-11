@@ -1,7 +1,7 @@
-package ru.nsu.fit.g20203.sinyukov.manager.hashcrackrequestrepository;
+package ru.nsu.fit.g20203.sinyukov.manager.request.repository;
 
 import org.springframework.stereotype.Repository;
-import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
 
 import java.util.UUID;
 

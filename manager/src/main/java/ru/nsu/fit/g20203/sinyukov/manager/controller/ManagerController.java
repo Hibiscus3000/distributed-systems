@@ -5,12 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
-import ru.nsu.fit.g20203.sinyukov.manager.HashCrackRequest;
-import ru.nsu.fit.g20203.sinyukov.manager.HashCrackState;
 import ru.nsu.fit.g20203.sinyukov.manager.PatchProcessor;
 import ru.nsu.fit.g20203.sinyukov.manager.RequestProcessor;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
-import ru.nsu.fit.g20203.sinyukov.manager.requestvalidation.KnownRequestId;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.HashCrackState;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.repository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.request.validation.KnownRequestId;
 
 import java.util.UUID;
 

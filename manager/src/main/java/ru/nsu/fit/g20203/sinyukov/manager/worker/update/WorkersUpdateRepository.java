@@ -9,7 +9,7 @@ public interface WorkersUpdateRepository {
 
     void create(UUID id);
 
-    void update(UUID id);
+    void update(UUID id, int workPartNumber);
 
     boolean areAllWorkersFinished(UUID id);
 }

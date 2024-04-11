@@ -1,4 +1,4 @@
-package ru.nsu.fit.g20203.sinyukov.manager;
+package ru.nsu.fit.g20203.sinyukov.manager.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
+import ru.nsu.fit.g20203.sinyukov.rabbit.dispatch.DispatchException;
 import ru.nsu.fit.g20203.sinyukov.worker.Worker;
 
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,12 @@ public class WorkerController {
 
     @PostMapping("/crack/task")
     public void postHashCrackTask(@RequestBody HashCrackTask task) {
-        executorService.submit(() -> worker.processTask(task));
+        executorService.submit(() -> {
+            try {
+                worker.processTask(task);
+            } catch (DispatchException e) {
+                logger.error(e.getMessage());
+            }
+        });
     }
 }

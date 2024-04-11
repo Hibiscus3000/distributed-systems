@@ -4,7 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.HashCrackState;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.repository.HashCrackStateRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;
 
 import java.util.Set;
@@ -29,22 +30,27 @@ public class PatchProcessor {
     }
 
     public void process(HashCrackPatch patch) {
+        updateHashCrack(patch);
+
         final UUID id = patch.id();
         final Set<String> results = patch.results();
-
-        updateHashCrack(id, results);
         logResults(id, results);
-        if (workersUpdateRepository.areAllWorkersFinished(id) || !results.isEmpty())
+        if (canCancelTimeout(id, results))
             hashCrackTimer.cancelTimeout(id);
     }
 
-    private void updateHashCrack(UUID id, Set<String> results) {
+    private void updateHashCrack(HashCrackPatch patch) {
+        final UUID id = patch.id();
+        final Set<String> results = patch.results();
+        final int workPartNumber = patch.workPartNumber();
         final HashCrackState hashCrackState = hashCrackStateRepository.getHashCrack(id);
+
         hashCrackState.addResults(results);
-        workersUpdateRepository.update(id);
-        if (workersUpdateRepository.areAllWorkersFinished(id) && hashCrackState.ready()) {
-            logger.info(String.format("%s: All workers have finished working, found results %s", id, hashCrackState.getResults()));
+        workersUpdateRepository.update(id, workPartNumber);
+        if (workersUpdateRepository.areAllWorkersFinished(id)) {
+            hashCrackState.setReady();
         }
+        hashCrackStateRepository.updateHashCrack(hashCrackState);
     }
 
     private void logResults(UUID id, Set<String> results) {
@@ -54,4 +60,9 @@ public class PatchProcessor {
             logger.info(id + ": Worker found no results");
         }
     }
+
+    private boolean canCancelTimeout(UUID id, Set<String> results) {
+        return workersUpdateRepository.areAllWorkersFinished(id) || !results.isEmpty();
+    }
+    
 }

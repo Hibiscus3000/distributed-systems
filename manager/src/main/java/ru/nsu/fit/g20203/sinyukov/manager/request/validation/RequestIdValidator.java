@@ -1,9 +1,9 @@
-package ru.nsu.fit.g20203.sinyukov.manager.requestvalidation;
+package ru.nsu.fit.g20203.sinyukov.manager.request.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackrequestrepository.HashCrackRequestRepository;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.repository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.request.repository.HashCrackRequestRepository;
 
 import java.util.UUID;
 

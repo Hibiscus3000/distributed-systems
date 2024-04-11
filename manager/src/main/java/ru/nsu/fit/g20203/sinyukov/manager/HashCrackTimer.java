@@ -3,6 +3,7 @@ package ru.nsu.fit.g20203.sinyukov.manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.HashCrackState;
 
 import java.util.UUID;
 import java.util.concurrent.*;

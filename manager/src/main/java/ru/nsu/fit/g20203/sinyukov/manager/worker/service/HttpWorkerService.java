@@ -27,8 +27,7 @@ public class HttpWorkerService implements WorkerService {
     private final String[] workerUrls;
     private final String postHashCrackTaskPath;
 
-    // number of attempts to post worker hash crack task
-    private static final int ATTEMPTS = 3;
+    private static final int ATTEMPTS_TO_POST_TASK = 3;
     private static final int INITIAL_DELAY_BETWEEN_ATTEMPTS = 2;
     private static final double JITTER = 0.5;
 
@@ -60,13 +59,13 @@ public class HttpWorkerService implements WorkerService {
                     .onStatus(HttpStatusCode::is5xxServerError,
                             response -> Mono.error(new WorkerUnavailableException(response.statusCode())))
                     .bodyToMono(Void.class)
-                    .retryWhen(Retry.backoff(ATTEMPTS, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
+                    .retryWhen(Retry.backoff(ATTEMPTS_TO_POST_TASK, Duration.ofSeconds(INITIAL_DELAY_BETWEEN_ATTEMPTS))
                             .jitter(JITTER)
                             .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
                                 final var ex = new WorkerUnavailableException(
-                                        String.format("Unable to reach worker (%s) after %d attempts", workerUrl, ATTEMPTS),
+                                        String.format("Unable to reach worker (%s) after %d attempts", workerUrl, ATTEMPTS_TO_POST_TASK),
                                         HttpStatus.SERVICE_UNAVAILABLE);
-                                logger.debug(task.id() + ": Worker unavailable", ex);
+                                logger.debug(task.getRequestId() + ": Worker unavailable", ex);
                                 return ex;
                             }))
                     .doOnError(throwable ->

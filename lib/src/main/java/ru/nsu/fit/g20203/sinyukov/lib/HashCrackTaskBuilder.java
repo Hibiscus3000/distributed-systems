@@ -6,6 +6,7 @@ import java.util.UUID;
 public class HashCrackTaskBuilder {
 
     private UUID id;
+    private UUID requestId;
     private String hash;
     private int maxLength;
     private int partNumber;
@@ -18,6 +19,11 @@ public class HashCrackTaskBuilder {
 
     public HashCrackTaskBuilder id(UUID id) {
         this.id = id;
+        return this;
+    }
+
+    public HashCrackTaskBuilder requestId(UUID requestId) {
+        this.requestId = requestId;
         return this;
     }
 
@@ -47,6 +53,6 @@ public class HashCrackTaskBuilder {
     }
 
     public HashCrackTask build() {
-        return new HashCrackTask(id, hash, alphabet, maxLength, partNumber, partCount);
+        return new HashCrackTask(id, requestId, hash, alphabet, maxLength, partNumber, partCount);
     }
 }

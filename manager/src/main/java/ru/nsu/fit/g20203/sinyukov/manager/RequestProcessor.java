@@ -4,8 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackrequestrepository.HashCrackRequestRepository;
-import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstaterepository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.lib.HashCrackTask;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcrackstate.repository.HashCrackStateRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.hashcracktask.MongoHashCrackTaskRepository;
+import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
+import ru.nsu.fit.g20203.sinyukov.manager.request.repository.HashCrackRequestRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreationInfo;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.WorkerTasksCreator;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
@@ -25,6 +28,7 @@ public class RequestProcessor {
     private final HashCrackRequestRepository hashCrackRequestRepository;
     private final HashCrackStateRepository hashCrackStateRepository;
     private final WorkersUpdateRepository workersUpdateRepository;
+    private final MongoHashCrackTaskRepository hashCrackTaskRepository;
 
     private final HashCrackTimer hashCrackTimer;
 
@@ -35,6 +39,7 @@ public class RequestProcessor {
                             HashCrackRequestRepository hashCrackRequestRepository,
                             HashCrackStateRepository hashCrackStateRepository,
                             WorkersUpdateRepository workersUpdateRepository,
+                            MongoHashCrackTaskRepository hashCrackTaskRepository,
                             HashCrackTimer hashCrackTimer,
                             @Value("${alphabet}") List<String> alphabet) {
         this.numberOfWorkers = numberOfWorkers;
@@ -42,20 +47,21 @@ public class RequestProcessor {
         this.hashCrackRequestRepository = hashCrackRequestRepository;
         this.hashCrackStateRepository = hashCrackStateRepository;
         this.workersUpdateRepository = workersUpdateRepository;
+        this.hashCrackTaskRepository = hashCrackTaskRepository;
         this.hashCrackTimer = hashCrackTimer;
         this.alphabet = alphabet;
     }
 
     public UUID process(HashCrackRequest request) {
         if (!hashCrackRequestRepository.containsRequest(request)) {
-            createAndSendNewTask(request);
+            processNewRequest(request);
         } else {
             logRepeatedRequest(request);
         }
         return hashCrackRequestRepository.getRequestId(request);
     }
 
-    private void createAndSendNewTask(HashCrackRequest request) {
+    private void processNewRequest(HashCrackRequest request) {
         final UUID id = UUID.randomUUID();
         logger.info(id + ": Received new request: " + request);
 
@@ -63,8 +69,10 @@ public class RequestProcessor {
 
         createNewHashCrack(id);
 
-        workerService.dispatchTasksToWorkers(WorkerTasksCreator.createTasks(
-                new WorkerTasksCreationInfo(id, request, numberOfWorkers, alphabet)));
+        final List<HashCrackTask> tasks = WorkerTasksCreator.createTasks(
+                new WorkerTasksCreationInfo(id, request, numberOfWorkers, alphabet));
+        hashCrackTaskRepository.saveAll(tasks);
+        workerService.dispatchTasksToWorkers(tasks);
 
         hashCrackTimer.setTimeout(hashCrackStateRepository.getHashCrack(id), id);
     }
@@ -77,4 +85,5 @@ public class RequestProcessor {
     private void logRepeatedRequest(HashCrackRequest request) {
         logger.info(hashCrackRequestRepository.getRequestId(request) + ": Received repeated request: " + request);
     }
+
 }
