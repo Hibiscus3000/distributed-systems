@@ -5,6 +5,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import ru.nsu.fit.g20203.sinyukov.lib.IdentifiableByRequest;
+import ru.nsu.fit.g20203.sinyukov.rabbit.connection.ConnectionObserver;
 import ru.nsu.fit.g20203.sinyukov.rabbit.connection.ConnectionState;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.UUID;
 import static ru.nsu.fit.g20203.sinyukov.lib.StringUtil.capitalizeFirstLetter;
 import static ru.nsu.fit.g20203.sinyukov.lib.StringUtil.getPluralOrSingular;
 
-public class AsyncRabbitDispatcher<T extends IdentifiableByRequest> extends RabbitDispatcher<T> {
+public class AsyncRabbitDispatcher<T extends IdentifiableByRequest> extends RabbitDispatcher<T> implements ConnectionObserver {
 
     private final List<Dispatchable<T>> toDispatch = new ArrayList<>();
 
@@ -27,6 +28,8 @@ public class AsyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabb
                                  long confirmIntervalSec,
                                  int maxRetryCount) {
         super(rabbitTemplate, connectionState, exchange, binding, nameOfTheObjectBeingDispatched, confirmIntervalSec, maxRetryCount);
+
+        connectionState.addObserver(this);
     }
 
     @Override

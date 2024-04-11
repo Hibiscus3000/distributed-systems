@@ -26,34 +26,20 @@ public class SyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabbi
         this.connectionTimeMillis = connectionWaitingTimeMillis;
     }
 
-    @Override
-    public void connectionOpened() {
-        notifyAll();
-    }
-
     public void dispatchSync(T payload) throws DispatchException {
         dispatchSync(payload, 1);
     }
 
     private void dispatchSync(T payload, int attemptNumber) throws DispatchException {
         logDispatchAttempt(payload.getRequestId(), attemptNumber);
-        waitForConnection();
+        if (!connectionState.isOpen()) {
+            return;
+        }
         try {
             dispatch(payload).get();
         } catch (AmqpException | ExecutionException | InterruptedException e) {
             processDispatchingException(e, payload, attemptNumber);
         }
-    }
-
-    private void waitForConnection() throws DispatchException {
-        try {
-            if (!connectionState.isOpen()) {
-                wait(connectionTimeMillis);
-            }
-        } catch (InterruptedException e) {
-            throw new DispatchException("Rabbit connection timeout", e);
-        }
-
     }
 
     private void processDispatchingException(Throwable throwable, T payload, int attemptNumber) throws DispatchException {

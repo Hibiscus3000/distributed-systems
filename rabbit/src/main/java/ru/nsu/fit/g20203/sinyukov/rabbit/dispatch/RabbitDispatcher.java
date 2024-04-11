@@ -8,7 +8,6 @@ import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import ru.nsu.fit.g20203.sinyukov.lib.IdentifiableByRequest;
-import ru.nsu.fit.g20203.sinyukov.rabbit.connection.ConnectionObserver;
 import ru.nsu.fit.g20203.sinyukov.rabbit.connection.ConnectionState;
 
 import java.util.UUID;
@@ -17,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import static ru.nsu.fit.g20203.sinyukov.lib.StringUtil.capitalizeFirstLetter;
 
-public abstract class RabbitDispatcher<T extends IdentifiableByRequest> implements ConnectionObserver {
+public abstract class RabbitDispatcher<T extends IdentifiableByRequest> {
 
     protected final Logger logger = LoggerFactory.getLogger(RabbitDispatcher.class);
 
@@ -40,7 +39,6 @@ public abstract class RabbitDispatcher<T extends IdentifiableByRequest> implemen
                                int maxRetryCount) {
         this.rabbitTemplate = rabbitTemplate;
         this.connectionState = connectionState;
-        connectionState.addObserver(this);
 
         exchangeName = exchange.getName();
         bindingKey = binding.getRoutingKey();
