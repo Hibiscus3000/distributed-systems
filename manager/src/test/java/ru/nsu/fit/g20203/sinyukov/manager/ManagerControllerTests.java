@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import ru.nsu.fit.g20203.sinyukov.lib.HashCrackPatch;
@@ -21,12 +22,14 @@ import ru.nsu.fit.g20203.sinyukov.manager.request.HashCrackRequest;
 import ru.nsu.fit.g20203.sinyukov.manager.request.repository.HashCrackRequestRepository;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.service.WorkerService;
 import ru.nsu.fit.g20203.sinyukov.manager.worker.update.WorkersUpdateRepository;
+import ru.nsu.fit.g20203.sinyukov.rabbit.RabbitMQHashConfig;
 
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 @WebMvcTest(ManagerController.class)
+@ActiveProfiles("dev")
 class ManagerControllerTests {
 
     @MockBean
@@ -45,6 +48,8 @@ class ManagerControllerTests {
     private RequestProcessor requestProcessor;
     @MockBean
     private PatchProcessor patchProcessor;
+    @MockBean
+    private RabbitMQHashConfig rabbitMQHashConfig;
 
     private final WebTestClient client;
 
