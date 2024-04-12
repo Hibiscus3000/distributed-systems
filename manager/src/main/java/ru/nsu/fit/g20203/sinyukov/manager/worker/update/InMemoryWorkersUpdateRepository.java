@@ -1,12 +1,10 @@
 package ru.nsu.fit.g20203.sinyukov.manager.worker.update;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
 
-@Primary
 @Repository
 public class InMemoryWorkersUpdateRepository implements WorkersUpdateRepository {
 
