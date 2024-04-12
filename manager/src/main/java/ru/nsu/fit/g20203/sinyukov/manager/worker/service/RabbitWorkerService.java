@@ -67,6 +67,6 @@ public class RabbitWorkerService implements WorkerService {
     }
 
     private Runnable createDispatchCallback(HashCrackTask task) {
-        return () -> hashCrackTaskRepository.deleteById(task.getId());
+        return () -> hashCrackTaskRepository.deleteById(task.id());
     }
 }

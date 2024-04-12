@@ -34,7 +34,7 @@ public class Worker {
         final ResultsSearcher resultsSearcher = ResultsSearcherFactory.create(task);
         logger.debug(id + ": Results searcher created: " + resultsSearcher);
         final Set<String> results = findResults(id, resultsSearcher);
-        final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, task.getPartNumber(), results);
+        final HashCrackPatch hashCrackPatch = new HashCrackPatch(id, task.partNumber(), results);
         managerService.dispatchHashCrackPatchToManager(hashCrackPatch);
     }
 
