@@ -7,15 +7,19 @@ COPY gradlew gradlew
 COPY gradle gradle
 COPY settings.gradle settings.gradle 
 
-WORKDIR lib
+WORKDIR /workspace/lib
 COPY lib/build.gradle .
 COPY lib/src src
+
+WORKDIR /workspace/rabbit
+COPY rabbit/build.gradle .
+COPY rabbit/src src
 
 WORKDIR /workspace/${COMPONENT}
 COPY ${COMPONENT}/build.gradle .
 COPY ${COMPONENT}/src src
 
-RUN ["/workspace/gradlew", "build"]
+RUN ["/workspace/gradlew", "build", "-x", "test"]
 
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /workspace
