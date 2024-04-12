@@ -31,7 +31,6 @@ public class HashCrackState implements IdentifiableByRequest {
         this(id, HashCrackStatus.IN_PROGRESS, new HashSet<>());
     }
     
-
     public synchronized boolean error() {
         if (HashCrackStatus.IN_PROGRESS == status) {
             status = HashCrackStatus.ERROR;

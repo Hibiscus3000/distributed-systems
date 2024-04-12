@@ -1,9 +1,13 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
-group = 'ru.nsu.fit.g20203.sinyukov.rabbit'
+group = 'ru.nsu.fit.g20203.sinyukov'
 version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '21'
+}
 
 repositories {
     mavenCentral()

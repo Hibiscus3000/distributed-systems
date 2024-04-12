@@ -2,9 +2,13 @@ plugins {
     id 'java-library'
 }
 
+group = 'ru.nsu.fit.g20203.sinyukov'
+version = '0.0.1-SNAPSHOT'
+
 java {
     sourceCompatibility = '21'
 }
+
 
 repositories {
     mavenCentral()
@@ -17,5 +21,3 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.17.0'
 }
 
-group = 'ru.nsu.fit.g20203.sinyukov'
-version = '0.0.1-SNAPSHOT'
