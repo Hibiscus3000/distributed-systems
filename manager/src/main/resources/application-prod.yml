@@ -1,0 +1,5 @@
+spring:
+  data:
+    mongodb:
+      uri:
+        mongodb://mongodb1:27017,mongodb2:27018,mongodb3:27019 

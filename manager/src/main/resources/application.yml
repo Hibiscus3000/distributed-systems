@@ -24,8 +24,3 @@ spring:
   rabbitmq:
     prefetch-count:
       100
-  mongodb:
-    host:
-      localhost
-    port:
-      27017
