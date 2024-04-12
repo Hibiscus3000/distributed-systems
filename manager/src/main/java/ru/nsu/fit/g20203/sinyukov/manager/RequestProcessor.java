@@ -54,14 +54,14 @@ public class RequestProcessor {
 
     public UUID process(HashCrackRequest request) {
         if (!hashCrackRequestRepository.containsRequest(request)) {
-            processNewRequest(request);
+            return processNewRequest(request);
         } else {
             logRepeatedRequest(request);
+            return hashCrackRequestRepository.getRequestId(request);
         }
-        return hashCrackRequestRepository.getRequestId(request);
     }
 
-    private void processNewRequest(HashCrackRequest request) {
+    private UUID processNewRequest(HashCrackRequest request) {
         final UUID id = UUID.randomUUID();
         logger.info(id + ": Received new request: " + request);
 
@@ -75,6 +75,8 @@ public class RequestProcessor {
         workerService.dispatchTasksToWorkers(tasks);
 
         hashCrackTimer.setTimeout(hashCrackStateRepository.getHashCrack(id), id);
+
+        return id;
     }
 
     private void createNewHashCrack(UUID id) {
