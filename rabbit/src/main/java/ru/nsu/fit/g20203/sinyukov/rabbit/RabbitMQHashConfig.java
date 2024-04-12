@@ -19,9 +19,13 @@ import ru.nsu.fit.g20203.sinyukov.lib.YamlPropertySourceFactory;
 @Configuration
 @ComponentScan
 @PropertySource(value = "classpath:rabbit-application.yml", factory = YamlPropertySourceFactory.class)
+@PropertySource(value = "classpath:rabbit-application-${spring.profiles.active:}.yml", factory = YamlPropertySourceFactory.class)
 public class RabbitMQHashConfig {
 
     private final Logger logger = LoggerFactory.getLogger(RabbitMQHashConfig.class);
+
+    private final String host;
+    private final int port;
 
     private final String tasksExchangeName;
     private final String tasksQueueName;
@@ -34,12 +38,17 @@ public class RabbitMQHashConfig {
     private final static double BACKOFF_MULTIPLIER = 10.0;
     private final static long BACKOFF_MAX_INTERVAL = 10000;
 
-    public RabbitMQHashConfig(@Value("${spring.rabbitmq.tasks.exchange}") String tasksExchangeName,
+    public RabbitMQHashConfig(@Value("${spring.rabbitmq.host}") String host,
+                              @Value("${spring.rabbitmq.port}") int port,
+                              @Value("${spring.rabbitmq.tasks.exchange}") String tasksExchangeName,
                               @Value("${spring.rabbitmq.tasks.queue}") String tasksQueueName,
                               @Value("${spring.rabbitmq.tasks.binding-key}") String tasksBindingKeyName,
                               @Value("${spring.rabbitmq.results.exchange}") String resultsExchangeName,
                               @Value("${spring.rabbitmq.results.queue}") String resultsQueueName,
                               @Value("${spring.rabbitmq.results.binding-key}") String resultsBindingKeyName) {
+        this.host = host;
+        this.port = port;
+        
         this.tasksExchangeName = tasksExchangeName;
         this.tasksQueueName = tasksQueueName;
         this.tasksBindingKeyName = tasksBindingKeyName;
@@ -51,6 +60,10 @@ public class RabbitMQHashConfig {
     @Bean
     public ConnectionFactory connectionFactory(RabbitMQHashConnectionListener connectionListener) {
         final var connectionFactory = new CachingConnectionFactory();
+
+        connectionFactory.setHost(host);
+        connectionFactory.setPort(port);
+        
         connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         connectionFactory.setPublisherReturns(true);
         connectionFactory.addConnectionListener(connectionListener);
