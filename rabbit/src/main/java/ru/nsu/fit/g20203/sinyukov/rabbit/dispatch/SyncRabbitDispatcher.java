@@ -30,14 +30,16 @@ public class SyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabbi
         dispatchSync(payload, 1);
     }
 
-    private void dispatchSync(T payload, int attemptNumber) throws DispatchException {
+    private void dispatchSync(T payload, int attemptNumber) throws DispatchException, AmqpException {
         logDispatchAttempt(payload.getRequestId(), attemptNumber);
         if (!connectionState.isOpen()) {
             return;
         }
         try {
             dispatch(payload).get();
-        } catch (AmqpException | ExecutionException | InterruptedException e) {
+        } catch (AmqpException e) {
+            throw new DispatchException(payload.getRequestId(), e);
+        } catch (ExecutionException | InterruptedException e) {
             processDispatchingException(e, payload, attemptNumber);
         }
     }
@@ -48,8 +50,7 @@ public class SyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabbi
             final var ex = new DispatchException(payload.getRequestId(), throwable);
             logger.error(ex.getMessage());
             throw ex;
-        } else {
-            dispatchSync(payload, ++attemptNumber);
         }
+        dispatchSync(payload, ++attemptNumber);
     }
 }
