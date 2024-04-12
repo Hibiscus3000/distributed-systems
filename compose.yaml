@@ -5,17 +5,101 @@ services:
       dockerfile: Dockerfile
       args:
         COMPONENT: manager
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb1:
+        condition: service_healthy
     environment:
-      - workers.urls=http://worker:8081
-      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov.manager=TRACE
+      - workers.urls=http://worker1:8081, http://worker2:8082
+      - workers.count=2
+      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov=TRACE -Dspring.profiles.active=prod
     ports:
       - 8080:8080
-  worker:
+
+
+  worker1:
     image: worker
     build:
       dockerfile: Dockerfile
       args:
         COMPONENT: worker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
       - manager.baseUrl=http://manager:8080
-      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov.worker=TRACE
+      - server.port=8081
+      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov=TRACE -Dspring.profiles.active=prod
+
+  worker2:
+    image: worker
+    build:
+      dockerfile: Dockerfile
+      args:
+        COMPONENT: worker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - manager.baseUrl=http://manager:8080
+      - server.port=8082
+      - _JAVA_OPTIONS=-Dlogging.level.ru.nsu.fit.g20203.sinyukov=TRACE -Dspring.profiles.active=prod
+  
+  
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - 15672:15672
+      - 5672:5672
+    restart: on-failure
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 30s
+      start_interval: 5s
+      retries: 10
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+  
+  mongodb1:
+    image: mongo:latest
+    command: [ "--replSet", "rs0", "--bind_ip_all", "--port", "27017" ]
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb1:27017'},{_id:1,host:'mongodb2:27018'},{_id:2,host:'mongodb3:27019'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb1_data:/data/db
+      - mongodb1_config:/data/configdb
+
+  mongodb2:
+    image: mongo:latest
+    command: [ "--replSet", "rs0", "--bind_ip_all", "--port", "27018" ]
+    ports:
+      - 27018:27018
+    volumes:
+      - mongodb2_data:/data/db
+      - mongodb2_config:/data/configdb
+
+  mongodb3:
+    image: mongo:latest
+    command: [ "--replSet", "rs0", "--bind_ip_all", "--port", "27019" ]
+    ports:
+      - 27019:27019
+    volumes:
+      - mongodb3_data:/data/db
+      - mongodb3_config:/data/configdb
+
+volumes:
+  rabbitmq:
+  mongodb1_data:
+  mongodb2_data:
+  mongodb3_data:
+  mongodb1_config:
+  mongodb2_config:
+  mongodb3_config:
+  
