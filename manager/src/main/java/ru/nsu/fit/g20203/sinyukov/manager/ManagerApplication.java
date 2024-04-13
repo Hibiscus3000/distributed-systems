@@ -25,6 +25,7 @@ public class ManagerApplication {
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(@Value("${spring.rabbitmq.prefetch-count}") int prefetchCount,
                                                                                ConnectionFactory connectionFactory) {
         final var factory = new SimpleRabbitListenerContainerFactory();
+        factory.setMaxConcurrentConsumers(1);
         factory.setConnectionFactory(connectionFactory);
         factory.setAcknowledgeMode(AcknowledgeMode.AUTO); // береженого бог бережет
         factory.setMessageConverter(new Jackson2JsonMessageConverter());
