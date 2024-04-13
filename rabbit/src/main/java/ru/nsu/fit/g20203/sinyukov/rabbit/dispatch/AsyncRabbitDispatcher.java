@@ -33,7 +33,7 @@ public class AsyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabb
     }
 
     @Override
-    public void connectionOpened() {
+    public synchronized void connectionOpened() {
         logger.info("Connection restored. Dispatching all pending tasks");
         dispatchAllAsync(toDispatch);
     }
@@ -69,7 +69,7 @@ public class AsyncRabbitDispatcher<T extends IdentifiableByRequest> extends Rabb
         }
     }
 
-    private void addToDispatchLater(Dispatchable<T> dispatchable) {
+    private synchronized void addToDispatchLater(Dispatchable<T> dispatchable) {
         toDispatch.add(dispatchable);
         final String nameOfTheObjectBeingDispatcher = capitalizeFirstLetter(nameOfTheObjectBeingDispatched);
         logger.info(String.format("%s: %s will be dispatcher later due to connection unavailability",
